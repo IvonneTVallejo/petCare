@@ -163,10 +163,20 @@ async function cargarConsultas() {
     }
 
     data.forEach(c => {
+
+        let motivo = c.cm_motivo_consulta || "-";
+
+        if (motivo !== "-") {
+            const palabras = motivo.split(" ");
+            if (palabras.length > 10) {
+                motivo = palabras.slice(0, 10).join(" ") + "...";
+            }
+        }
+
         tbody.innerHTML += `
         <tr class="text-center align-middle">
             <td>${c.cm_fecha_consulta || "-"}</td>
-            <td>${c.cm_motivo_consulta || "-"}</td>
+            <td>${motivo}</td>
             <td>${c.estado_consulta?.ec_estado_consulta || "-"}</td>
             <td>
                 <button 
@@ -179,6 +189,7 @@ async function cargarConsultas() {
         </tr>
     `;
     });
+
 
 }
 
