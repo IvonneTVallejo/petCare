@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("pdf_especie").textContent = datos.especie;
     document.getElementById("pdf_raza").textContent = datos.raza;
     document.getElementById("pdf_sexo").textContent = datos.sexo;
-    document.getElementById("pdf_peso").textContent = datos.peso + " kg";
+    document.getElementById("pdf_peso").textContent = datos.peso;
     document.getElementById("pdf_tratamiento").textContent = datos.tratamiento;
 
     // 🔹 Generar nombre dinámico
