@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<!--=== Coding by CodingLab | www.codinglabweb.com === -->
+<html lang="en">
+
+<head>
+    <title>SOFTLIB - Calculo Actuarial</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link href="https://unicons.iconscout.com/release/v4.0.0/css/line.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link href="/css/cambiarContrasena.css" rel="stylesheet">
+</head>
+
+<body>
+    <nav>
+        <div class="logo-name">
+            <div class="logo-image">
+                <img src="/Images/logo.png" alt="">
+            </div>
+
+            <span class="logo_name">Cálculo Actuarial</span>
+        </div>
+
+        <div class="menu-items">
+            <ul class="nav-links">
+                <li><a href="/pages/empleados.html">
+                        <i class="uil uil-user-square"></i>
+                        <span class="link-name">Empleados</span>
+                    </a></li>
+                <li><a href="/pages/empleadores.html">
+                        <i class="uil uil-building"></i>
+                        <span class="link-name">Empleadores</span>
+                    </a></li>
+                <li><a href="/pages/calculoActuarial.html">
+                        <i class="uil uil-calculator"></i>
+                        <span class="link-name">Cálculo Actuarial</span>
+                    </a></li>
+                <li><a href="/pages/salario.html" id="pageSalario">
+                        <i class="uil uil-cog"></i>
+                        <span class="link-name">Actualizar Parámetros</span>
+                    </a></li>
+                <li><a href="/pages/usuarios.html" id="pageUsuarios">
+                        <i class="uil  uil-user-check"></i>
+                        <span class="link-name">Gestión de Usuarios</span>
+                    </a></li>
+                <li><a href="#">
+                        <i class="uil uil-padlock"></i>
+                        <span class="link-name">Cambiar contraseña</span>
+                    </a></li>
+            </ul>
+
+
+
+
+            <ul class="logout-mode">
+                <li><a onclick="cerrarSesion()">
+                        <i class="uil uil-signout"></i>
+                        <span class="link-name">Logout</span>
+                    </a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="dashboard">
+        <div class="top">
+            <i class="uil uil-bars sidebar-toggle"></i>
+            <div id="usernameDisplay">
+                <img src="/Images/sesion.png" />
+            </div>
+        </div>
+
+        <div class="dash-content">
+            <div class="activity">
+                <div class="title">
+                    <i class="uil uil-padlock"></i>
+                    <span class="text">CAMBIAR CONTRASEÑA</span>
+                </div>
+                <div class="container-fluid" id="contrasena">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <input type="hidden" class="form-control" id="idUser">
+                        </div>
+                        <div class="form-group">
+                            <label for="password1">Nueva contraseña:</label>
+                            <input type="password" class="form-control" id="password1">
+                        </div>
+                        <div class="form-group">
+                            <label for="password2">Confirmar contraseña:</label>
+                            <input type="password" class="form-control" id="password2">
+                        </div>
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-success" id="cambiarContrasena"
+                        onclick="modificarContraseña()" style="font-size: 13px;">Guardar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://code.jquery.com/jquery-3.6.3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
+    <script src="/js/script.js"></script>
+    <script src="/js/cambiarContrasena.js"></script>
+</body>
+
+</html>

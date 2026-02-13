@@ -1,0 +1,133 @@
+@page {
+    size: 13cm 20cm;
+    margin: 0;
+}
+
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.formula {
+    width: 13cm;
+    height: 20cm;
+    position: relative;
+    padding: 25px;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+/* 🔹 FONDO DIFUMINADO */
+.formula::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: url('/Images/fondo-formula.jpg');
+    background-size: cover;
+    background-position: center;
+    filter: blur(4px);
+    opacity: 0.15; /* 👈 aquí controlas qué tan visible es */
+    z-index: 0;
+}
+
+
+/* 🔹 CAPA BLANCA SUAVE */
+.formula::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.92); /* 👈 más sólido */
+    z-index: 1;
+}
+
+/* Todo el contenido arriba del fondo */
+.formula>* {
+    position: relative;
+    z-index: 2;
+}
+
+.datos-formula {
+    margin-top: 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px 30px;
+}
+
+.campo {
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid rgba(0,0,0,0.3);
+    padding-bottom: 6px;
+}
+
+.etiqueta {
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #3f6f64;
+    font-weight: 600;
+}
+
+.valor {
+    font-size: 14px;
+    margin-top: 4px;
+    color: #222;
+}
+
+.datos-compacto {
+    margin-top: 15px;
+    font-size: 12px;
+    color: #222;
+}
+
+.fila {
+    margin-bottom: 8px;
+    border-bottom: 1px solid rgba(0,0,0,0.35);
+    padding-bottom: 4px;
+}
+
+.fila.doble {
+    display: flex;
+    justify-content: space-between;
+    gap: 30px;
+}
+
+.fila.doble > div {
+    flex: 1;
+    border-bottom: 1px solid rgba(0,0,0,0.35);
+    padding-bottom: 4px;
+}
+
+.label {
+    font-weight: 600;
+    margin-right: 5px;
+}
+
+.value {
+    font-weight: 400;
+}
+
+
+.contenido-tratamiento {
+    font-size: 12px;   /* prueba 11px si lo quieres más compacto */
+    line-height: 1.4;
+}
+
+.tratamiento {
+    margin-top: 0px;   /* antes 25px */
+    font-size: 11px;    /* ya lo dejamos más pequeño */
+    min-height: 60px;   /* opcional, también lo bajamos */
+    white-space: pre-line; /* 👈 ESTA ES LA CLAVE */
+}
+
+.titulo-tratamiento {
+    font-weight: bold;
+    font-size: 13px;
+    margin-bottom: 5px;
+}
+
+#pdf_tratamiento {
+    font-size: 11px;
+    margin: 0;
+    line-height: 1.4;
+}

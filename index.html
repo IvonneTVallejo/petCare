@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+  <title>PetCare System</title>
+  <link rel="stylesheet" href="css/index.css">
+</head>
+
+<body>
+
+  <div class="login-wrapper">
+
+    <!-- LADO IZQUIERDO -->
+    <div class="login-left">
+
+      <div class="login-box">
+        <div class="login-logo">
+          <img src="/Images/avatar.png" alt="PetCare Bonamur">
+        </div>
+
+        <h2 class="logo-text">PetCare Bonamur
+        </h2>
+        <p class="subtitle">Inicia sesión</p>
+
+        <form>
+          <div class="field">
+            <input type="text" placeholder="Documento" id="username" required>
+          </div>
+
+          <div class="field space">
+            <input type="password" class="pass-key" placeholder="Contraseña" id="password" required>
+            <span class="show">Mostrar</span>
+          </div>
+
+          <div class="remember">
+            <input type="checkbox"> Recordarme
+          </div>
+
+          <div class="field">
+            <input type="submit" value="Ingresar" id="login">
+          </div>
+        </form>
+
+        <div class="signup">
+          <a onclick="mostrarAlerta()">¿Has olvidado tu contraseña?</a>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- LADO DERECHO -->
+    <div class="login-right"></div>
+
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/index.js"></script>
+  <link rel="stylesheet" href="/css/loader.css">
+  <script src="js/loader.js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Fórmula Médica</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+    <link href="/css/reporte-formula.css" rel="stylesheet">
+    <style>
+        @page {
+            size: 13cm 20cm;
+            margin: 0;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .formula {
+            width: 13cm;
+            height: 20cm;
+            position: relative;
+            padding: 25px;
+            box-sizing: border-box;
+            background-image: url('/Images/fondo-formula.jpg');
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* HEADER */
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo {
+            width: 70px;
+        }
+
+        /* DATOS */
+        .datos {
+            margin-top: 10px;
+            font-size: 12px;
+        }
+
+        .datos table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .datos td {
+            padding: 4px;
+            border-bottom: 1px solid #000;
+            font-size: 12px;
+        }
+
+        /* TRATAMIENTO */
+        .tratamiento {
+            margin-top: 25px;
+            font-size: 13px;
+            min-height: 80px;
+        }
+
+        /* FIRMA */
+        .footer {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        .footer h3 {
+            margin: 0;
+        }
+
+        .footer small {
+            display: block;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="pdf-content" class="formula">
+        <div class="header">
+            <img src="/Images/avatar.png" class="logo">
+            <div>
+                <b>Centro Veterinario Bonamur</b><br>
+                <small>Fórmula Médica</small>
+            </div>
+        </div>
+
+        <div class="datos-compacto">
+            <div class="fila">
+                <span class="label">Propietario:</span>
+                <span class="value" id="pdf_propietario"></span>
+            </div>
+            <div class="fila">
+                <span class="label">Mascota:</span>
+                <span class="value" id="pdf_mascota"></span>
+            </div>
+
+            <div class="fila doble">
+                <div>
+                    <span class="label">Especie:</span>
+                    <span class="value" id="pdf_especie"></span>
+                </div>
+                <div>
+                    <span class="label">Raza:</span>
+                    <span class="value" id="pdf_raza"></span>
+                </div>
+            </div>
+            <div class="fila doble">
+                <div>
+                    <span class="label">Sexo:</span>
+                    <span class="value" id="pdf_sexo"></span>
+                </div>
+                <div>
+                    <span class="label">Peso:</span>
+                    <span class="value" id="pdf_peso"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="tratamiento">
+            <div class="titulo-tratamiento">Tratamiento:</div>
+            <p id="pdf_tratamiento"></p>
+        </div>
+        <div class="footer">
+            <h3>Dra. Sandra Sánchez Pachón</h3>
+            <small>Médica veterinaria zootecnista</small>
+            <small>📧 bonamur.veterinaria2022@hotmail.com</small>
+            <small>📍 Carrera 52 #40-02 Alquería</small>
+            <small>📞 314 338 3987</small>
+        </div>
+
+    </div>
+
+    <script src="/js/reporte_formula.js"></script>
+
+</body>
+
+</html>

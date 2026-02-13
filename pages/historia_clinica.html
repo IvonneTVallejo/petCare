@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>SOFTLIB - Calculo Actuarial</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link href="https://unicons.iconscout.com/release/v4.0.0/css/line.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link href="/css/historia_clinica.css" rel="stylesheet">
+</head>
+
+<!-- Inicio menu de navegacion lateral -->
+
+<body>
+    <nav>
+        <div class="logo-name">
+            <div class="logo-image">
+                <img src="/Images/logo.png" alt="">
+            </div>
+            <span class="logo_name">PetCare</span>
+        </div>
+        <div class="menu-items">
+            <ul class="nav-links">
+                <li>
+                    <a href="/pages/home.html" class="menu-link">
+                        <i><img src="/Images/inicio.png" class="user-icon"></i>
+                        <span class="link-name">Inicio</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/pages/pacientes.html" class="menu-link">
+                        <i><img src="/Images/dueno-de-una-mascota.png" class="user-icon"></i>
+                        <span class="link-name">Pacientes</span>
+                    </a>
+                </li>
+            </ul>
+
+            <ul class="logout-mode">
+                <li><a onclick="cerrarSesion()">
+                        <i><img src="/Images/cerrar-sesion.png" alt="Usuario" class="user-icon"></i>
+                        <span class="link-name">Logout</span>
+                    </a></li>
+            </ul>
+        </div>
+    </nav>
+    <!-- Fin menu de navegacion lateral -->
+
+    <!-- Inicio tabla y modal para insertar nuevo registro -->
+    <section class="dashboard">
+        <div class="top">
+            <i class="uil uil-bars sidebar-toggle"></i>
+            <div id="usernameDisplay">
+                <img src="/Images/sesion.png" />
+            </div>
+        </div>
+        <div class="dash-content">
+            <div class="activity">
+                <div class="title">
+                    <img src="/Images/informe-medico.png" alt="Usuario" class="user-icon">
+                    <span class="text">HISTORIA CLINICA</span>
+                </div>
+
+
+
+            </div>
+        </div>
+    </section>
+    <!-- Fin tabla y modal para insertar nuevo registro -->
+
+    <!-- Inicio modal para actualizar empleador-->
+    <div class="modal fade" id="actualizarEmpleadorModal" tabindex="-1" aria-labelledby="exampleModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header" style="background-color: #e5be01">
+                    <h5 class="modal-title" id="exampleModalLabel">Actualizar Empleador
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">
+                            <font style="vertical-align: inherit;">
+                                <font style="vertical-align: inherit;">×</font>
+                            </font>
+                        </span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="tipoUP">Tipo Identificación:</label>
+                        <select name="tipoUP" id="tipoUP" class="form-control">
+                            <option value="NIT">Número de Identificación Tributaria</option>
+                            <option value="CC">Cédula de Ciudadanía</option>
+                            <option value="CE">Cédula de Extranjería</option>
+                            <option value="TE">Tarjeta de Extranjería</option>
+                            <option value="PAP">Pasaporte</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="nitUP">Identificación:</label>
+                        <input type="text" class="form-control" id="nitUP" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label for="nombreUP">Nombre:</label>
+                        <input type="text" class="form-control" id="nombreUP">
+                    </div>
+                    <div class="form-group">
+                        <label for="telefonoUP">Teléfono:</label>
+                        <input type="text" class="form-control" id="telefonoUP">
+                    </div>
+                    <div class="form-group">
+                        <label for="correoUP">Correo:</label>
+                        <input type="email" class="form-control" id="correoUP">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-warning" id="registrar" onclick="actualizarEmpleador()"
+                        style="font-size: 13px;">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Fin modal para actualizar empleador-->
+
+    <!-- Import librerias JS-->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://code.jquery.com/jquery-3.6.3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
+    <script src="/js/script.js"></script>
+    <script src="/js/historia_clinica.js"></script>
+    <link rel="stylesheet" href="/css/loader.css">
+    <script src="/js/loader.js"></script>
+
+</body>
+
+</html>
