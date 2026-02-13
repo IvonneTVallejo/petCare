@@ -149,14 +149,15 @@
                                             required></textarea>
                                     </div>
                                     <div class="mb-3">
+                                        <label>Diágnostico</label>
+                                        <textarea class="form-control textarea-extra-grande"
+                                            id="cm_notas_consulta" required></textarea>
+                                    </div>
+                                    <div class="mb-3">
                                         <label>Tratamiento (Fórmula)</label>
                                         <textarea class="form-control textarea-grande" id="cm_tratamiento" required></textarea>
                                     </div>
-                                    <div class="mb-3">
-                                        <label>Observaciones adicionales</label>
-                                        <textarea class="form-control textarea-extra-grande"
-                                            id="cm_notas_consulta"></textarea>
-                                    </div>
+                                    
                                 </div>
                                 <div class="modal-footer">
                                     <button type="submit" id="btnLimpiarCampos" class="btn btn-success btn-sm"
@@ -202,6 +203,10 @@
 
                         <p><span class="label">Motivo:</span> <span id="vc_motivo"></span></p>
 
+                           <div class="bloque">
+                            <span class="label">Diágnostico</span>
+                            <p id="vc_notas"></p>
+                        </div>
                         <div class="bloque bloque-tratamiento">
                             <div class="bloque-header">
                                 <span class="label">Tratamiento</span>
@@ -215,10 +220,7 @@
                             <p id="vc_tratamiento"></p>
                         </div>
 
-                        <div class="bloque">
-                            <span class="label">Observaciones</span>
-                            <p id="vc_notas"></p>
-                        </div>
+                     
 
 
                         <p><b>Seguimiento</b></p>
