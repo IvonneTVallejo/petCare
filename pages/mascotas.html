@@ -40,6 +40,12 @@
                         <span class="link-name">Pacientes</span>
                     </a>
                 </li>
+                <li>
+                    <a href="/pages/agenda.html" class="menu-link">
+                        <i><img src="/Images/agenda.png" class="user-icon"></i>
+                        <span class="link-name">Agenda</span>
+                    </a>
+                </li>
             </ul>
             <ul class="logout-mode">
                 <li><a onclick="cerrarSesion()">
@@ -86,6 +92,7 @@
                                     <p><b>Raza:</b> <span id="fm_raza"></span></p>
                                     <p><b>Sexo:</b> <span id="fm_sexo"></span></p>
                                     <p><b>Peso:</b> <span id="fm_peso"></span></p>
+                                    <p><b>Esterilizado:</b> <span id="fm_esterilizado"></span></p>
                                     <p><b>Fecha Nacimiento:</b> <span id="fm_fechaNacimiento"></span></p>
 
                                     <button type="button" id="btnGenerarConsulta" class="btn btn-success btn-sm"
@@ -128,7 +135,7 @@
 
                 <!-- Inicio modal para insertar mascota -->
                 <div class="modal fade" id="modalRegistroConsulta" tabindex="-1">
-                    <div class="modal-dialog modal-xl modal-dialog-centered">
+                    <div class="modal-dialog modal-dialog-centered modal-xxl">
 
                         <div class="modal-content">
                             <div class="modal-header bg-success text-white">
@@ -143,21 +150,269 @@
                                     <input type="hidden" id="dm_dc_id_cliente">
                                     <input type="hidden" id="dm_id_mascota">
 
-                                    <div class="mb-3">
-                                        <label>Motivo Consulta</label>
-                                        <textarea class="form-control textarea-grande" id="cm_motivo_consulta"
-                                            required></textarea>
+                                    <div class="motivo-container">
+
+                                        <div class="motivo-input">
+                                            <label class="font-weight-bold">MOTIVO DE LA CONSULTA</label>
+                                            <textarea class="form-control" id="cm_motivo_consulta" required></textarea>
+                                        </div>
+
+                                        <div class="peso-box">
+                                            <label class="font-weight-bold">Peso</label>
+
+                                            <div class="peso-wrapper">
+                                                <input type="number" class="form-control peso-input"
+                                                    id="ef_peso_mascota" required>
+                                                <span class="peso-unit">Kg.</span>
+                                            </div>
+
+                                        </div>
+
                                     </div>
-                                    <div class="mb-3">
-                                        <label>Diágnostico</label>
-                                        <textarea class="form-control textarea-extra-grande"
-                                            id="cm_notas_consulta" required></textarea>
+                                    <div class="row">
+
+                                        <!-- MITAD IZQUIERDA -->
+                                        <div class="col-md-6">
+                                            <label class="font-weight-bold">EXAMEN FÍSICO</label>
+                                            <br>
+
+                                            <div class="mb-3 examen-fisico">
+                                                <div id="examenFisicoContainer" class="examen-grid"></div>
+                                            </div>
+
+                                            <div class="observaciones-box">
+
+                                                <label class="observaciones-title">Observaciones:</label>
+
+                                                <textarea id="cm_observaciones"
+                                                    class="form-control observaciones-text"></textarea>
+
+                                            </div>
+
+                                        </div>
+
+
+                                        <!-- MITAD DERECHA -->
+                                        <div class="col-md-6">
+                                            <div class="parasitos-wrapper">
+                                                <div class="parasitos-cards">
+                                                    <!-- PULGAS -->
+                                                    <div class="parasito-card">
+                                                        <div class="card-title">PULGAS</div>
+                                                        <div class="card-options">
+                                                            <label><input type="checkbox" data-group="pulgas" value="S">
+                                                                Sí</label>
+                                                            <label><input type="checkbox" data-group="pulgas" value="N">
+                                                                No</label>
+                                                            <div class="card-spec">Especifique:</div>
+                                                        </div>
+                                                        <input class="card-input" id="e_descripcion_pulgas">
+                                                    </div>
+                                                    <!-- GARRAPATAS -->
+                                                    <div class="parasito-card">
+                                                        <div class="card-title">GARRAPATAS</div>
+                                                        <div class="card-options">
+                                                            <label><input type="checkbox" data-group="garrapatas"
+                                                                    value="S">
+                                                                Sí</label>
+                                                            <label><input type="checkbox" data-group="garrapatas"
+                                                                    value="N">
+                                                                No</label>
+                                                            <div class="card-spec">Especifique:</div>
+                                                        </div>
+                                                        <input class="card-input" id="e_descripcion_garrapatas">
+                                                    </div>
+                                                    <!-- PRURITO -->
+                                                    <div class="parasito-card">
+                                                        <div class="card-title">PRURITO</div>
+                                                        <div class="card-options">
+                                                            <label><input type="checkbox" data-group="prurito"
+                                                                    value="S">
+                                                                Sí</label>
+                                                            <label><input type="checkbox" data-group="prurito"
+                                                                    value="N">
+                                                                No</label>
+                                                            <div class="card-spec">Especifique:</div>
+                                                        </div>
+                                                        <input class="card-input" id="e_descripcion_pruito">
+                                                    </div>
+                                                </div>
+
+                                                <div class="copro-row">
+                                                    <div class="copro-item">
+                                                        COPRO DIRECTO
+                                                        <label><input type="checkbox" data-group="copro_directo"
+                                                                value="S">
+                                                            Sí</label>
+                                                        <label><input type="checkbox" data-group="copro_directo"
+                                                                value="N">
+                                                            No</label>
+                                                    </div>
+                                                    <div class="copro-item">
+                                                        COPRO FLOTACIÓN
+                                                        <label><input type="checkbox" data-group="copro_flotacion"
+                                                                value="S">
+                                                            Sí</label>
+                                                        <label><input type="checkbox" data-group="copro_flotacion"
+                                                                value="N">
+                                                            No</label>
+                                                    </div>
+                                                </div>
+
+                                                <div class="diagnostico-card">
+                                                    <label class="font-weight-bold d-block">PLAN DE
+                                                        DIAGNÓSTICO</label>
+
+                                                    <div class="diagnostico-columns">
+
+                                                        <!-- COLUMNA IZQUIERDA -->
+                                                        <div class="diag-col">
+
+                                                            <div class="diag-header">
+                                                                <span></span>
+                                                                <span>SI</span>
+                                                                <span>NO</span>
+                                                            </div>
+
+                                                            <div class="diag-row"><span>RASPADO</span><input
+                                                                    type="checkbox" data-group="raspado"
+                                                                    value="S"><input type="checkbox"
+                                                                    data-group="raspado" value="N"></div>
+                                                            <div class="diag-row"><span>CITOLOGIA</span><input
+                                                                    type="checkbox" data-group="citologia"
+                                                                    value="S"><input type="checkbox"
+                                                                    data-group="citologia" value="N"></div>
+                                                            <div class="diag-row"><span>RX 1/2 CONTRASTE</span><input
+                                                                    type="checkbox" data-group="contraste"
+                                                                    value="S"><input type="checkbox"
+                                                                    data-group="contraste" value="N"></div>
+                                                            <div class="diag-row"><span>PERFIL RENAL</span><input
+                                                                    type="checkbox" data-group="renal" value="S"><input
+                                                                    type="checkbox" data-group="renal" value="N"></div>
+                                                            <div class="diag-row"><span>QUIMICA SANGUINEA</span><input
+                                                                    type="checkbox" data-group="sanguinea"
+                                                                    value="S"><input type="checkbox"
+                                                                    data-group="sanguinea" value="N"></div>
+                                                            <div class="diag-row"><span>PERFIL
+                                                                    PREANESTESICO</span><input type="checkbox"
+                                                                    data-group="preanestesico" value="S"><input
+                                                                    type="checkbox" data-group="preanestesico"
+                                                                    value="N"></div>
+                                                            <div class="diag-row"><span>PERFIL HEPATICO</span><input
+                                                                    type="checkbox" data-group="hepatico"
+                                                                    value="S"><input type="checkbox"
+                                                                    data-group="hepatico" value="N"></div>
+                                                            <div class="diag-row"><span>SNAP</span><input
+                                                                    type="checkbox" data-group="snap" value="S"><input
+                                                                    type="checkbox" data-group="snap" value="N"></div>
+
+                                                        </div>
+
+                                                        <!-- COLUMNA DERECHA -->
+                                                        <div class="diag-col">
+
+                                                            <div class="diag-header">
+                                                                <span></span>
+                                                                <span>SI</span>
+                                                                <span>NO</span>
+                                                            </div>
+
+                                                            <div class="diag-row"><span>RADIOGRAFIA</span><input
+                                                                    type="checkbox" data-group="radiografia"
+                                                                    value="S"><input type="checkbox"
+                                                                    data-group="radiografia" value="N"></div>
+                                                            <div class="diag-row"><span>ENDOSCOPIA</span><input
+                                                                    type="checkbox" data-group="endoscopia"
+                                                                    value="S"><input type="checkbox"
+                                                                    data-group="endoscopia" value="N"></div>
+                                                            <div class="diag-row"><span>HOSPITALIZACION</span><input
+                                                                    type="checkbox" data-group="hospitalizacion"
+                                                                    value="S"><input type="checkbox"
+                                                                    data-group="hospitalizacion" value="N"></div>
+                                                            <div class="diag-row"><span>SEDACION</span><input
+                                                                    type="checkbox" data-group="sedacion"
+                                                                    value="S"><input type="checkbox"
+                                                                    data-group="sedacion" value="N"></div>
+                                                            <div class="diag-row"><span>ANESTESIA</span><input
+                                                                    type="checkbox" data-group="anestesia"
+                                                                    value="S"><input type="checkbox"
+                                                                    data-group="anestesia" value="N"></div>
+                                                            <div class="diag-row"><span>SUTURAS</span><input
+                                                                    type="checkbox" data-group="suturas"
+                                                                    value="S"><input type="checkbox"
+                                                                    data-group="suturas" value="N"></div>
+                                                            <div class="diag-row"><span>OBSERVACION</span><input
+                                                                    type="checkbox" data-group="observacion"
+                                                                    value="S"><input type="checkbox"
+                                                                    data-group="observacion" value="N"></div>
+                                                            <div class="diag-row"><span>INTERCONSULTA</span><input
+                                                                    type="checkbox" data-group="interconsulta"
+                                                                    value="S"><input type="checkbox"
+                                                                    data-group="interconsulta" value="N"></div>
+
+                                                        </div>
+
+                                                    </div>
+
+                                                </div>
+                                            </div>
+
+
+
+                                        </div>
+
                                     </div>
-                                    <div class="mb-3">
-                                        <label>Tratamiento (Fórmula)</label>
-                                        <textarea class="form-control textarea-grande" id="cm_tratamiento" required></textarea>
+
+                                    <div class="row mt-2 cajas-diagnostico">
+
+                                        <!-- DIAGNOSTICOS DIFERENCIALES -->
+                                        <div class="col-md-4">
+                                            <div class="diagnostico-box">
+                                                <label class="font-weight-bold">DIAGNÓSTICOS DIFERENCIALES</label>
+                                                <textarea class="form-control diag-textarea"
+                                                    id="cm_diagnosticos_diferenciales"></textarea>
+                                            </div>
+                                        </div>
+
+                                        <!-- DIAGNOSTICO DEFINITIVO -->
+                                        <div class="col-md-4">
+                                            <div class="diagnostico-box">
+                                                <label class="font-weight-bold">DIAGNÓSTICO DEFINITIVO</label>
+                                                <textarea class="form-control diag-textarea"
+                                                    id="cm_diagnostico_definitivo"></textarea>
+                                            </div>
+                                        </div>
+
+                                        <!-- MEDICAMENTOS APLICADOS -->
+                                        <div class="col-md-4">
+                                            <div class="diagnostico-box">
+                                                <label class="font-weight-bold">MEDICAMENTOS APLICADOS</label>
+                                                <textarea class="form-control diag-textarea"
+                                                    id="cm_medicamentos_aplicados"></textarea>
+                                            </div>
+                                        </div>
+
                                     </div>
-                                    
+
+                                    <div class="presupuesto-box mt-2">
+
+                                        <label class="font-weight-bold">PRESUPUESTO</label>
+
+                                        <div class="input-group presupuesto-input">
+
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text">$</span>
+                                            </div>
+
+                                            <input type="number" class="form-control" min="0" step="0.01"
+                                                placeholder="0.00" id="cm_presupuesto">
+
+                                        </div>
+
+                                    </div>
+
+
+
                                 </div>
                                 <div class="modal-footer">
                                     <button type="submit" id="btnLimpiarCampos" class="btn btn-success btn-sm"
@@ -183,11 +438,11 @@
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header bg-success text-white">
-                                <h5 class="modal-title">Detalle consulta</h5>
-                                <button type="button" class="close text-white" data-dismiss="modal">
-                                    &times;
-                                </button>
-                            </div>
+                    <h5 class="modal-title">Detalle consulta</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal">
+                        &times;
+                    </button>
+                </div>
                 <div class="modal-body">
                     <div class="consulta-box">
                         <div class="consulta-header">
@@ -203,7 +458,7 @@
 
                         <p><span class="label">Motivo:</span> <span id="vc_motivo"></span></p>
 
-                           <div class="bloque">
+                        <div class="bloque">
                             <span class="label">Diágnostico</span>
                             <p id="vc_notas"></p>
                         </div>
@@ -220,19 +475,12 @@
                             <p id="vc_tratamiento"></p>
                         </div>
 
-                     
 
-
-                        <p><b>Seguimiento</b></p>
-                        <textarea class="form-control textarea-editable" id="vc_seguimiento"
-                            placeholder="Ingrese seguimiento de la consulta..."></textarea>
 
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" id="btnActualizarConsulta" class="btn btn-success btn-sm">
-                        Actualizar
-                    </button>
+                    
                     <button type="submit" id="btnFinalizarConsulta" class="btn btn-success btn-sm">
                         Finalizar consulta
                     </button>

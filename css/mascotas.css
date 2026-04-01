@@ -575,6 +575,10 @@ nav.close~.dashboard .top {
     width: 100%;
 }
 
+.modal-xxl {
+    max-width: 1300px !important;
+}
+
 .form-group label,
 .form-group input,
 .form-control {
@@ -638,6 +642,67 @@ li {
 
 :root {
     --petcare-green: #A9DFBF;
+}
+
+
+
+.examen-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    column-gap: 20px;
+    row-gap: 6px;
+}
+
+.examen-grid .campo {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.4px;
+    /* antes seguramente 10px o más */
+}
+
+.examen-grid .campo label {
+    width: 140px;
+    /* espacio para el texto */
+    font-size: 13px;
+}
+
+.examen-grid .campo input {
+    width: 140px;
+    /* ancho del input */
+    height: 24px;
+    padding: 2px 6px;
+}
+
+.examen-grid input:focus {
+
+    border-color: var(--petcare-green);
+    box-shadow: 0 0 3px var(--petcare-green);
+    outline: none;
+}
+
+.campo {
+    display: grid;
+    grid-template-columns: 70px 1fr;
+    align-items: center;
+    gap: 6px;
+}
+
+.campo label {
+    font-size: 13px;
+    color: #333;
+    text-align: right;
+}
+
+.campo input {
+    height: 24px;
+    font-size: 12px;
+    padding: 2px 6px;
+    border-radius: 5px;
+    border: 1px solid #cfcfcf;
+}
+
+.examen-fisico label:first-child {
+    font-size: 14px;
 }
 
 /* Contenedor ficha */
@@ -725,7 +790,10 @@ li {
     padding: 6px 10px;
 }
 
-#btnActualizarConsulta, #btnFinalizarConsulta, #btnLimpiarCampos, #btnGuardarConsulta {
+#btnActualizarConsulta,
+#btnFinalizarConsulta,
+#btnLimpiarCampos,
+#btnGuardarConsulta {
     margin-top: 10px;
     color: rgb(27, 23, 23);
     font-size: 12px;
@@ -735,7 +803,10 @@ li {
 }
 
 /* Hover bonito */
-#btnActualizarConsulta:hover, #btnFinalizarConsulta:hover, #btnLimpiarCampos:hover, #btnGuardarConsulta:hover{
+#btnActualizarConsulta:hover,
+#btnFinalizarConsulta:hover,
+#btnLimpiarCampos:hover,
+#btnGuardarConsulta:hover {
     background-color: #7B7D7D;
     border-color: #7B7D7D;
 }
@@ -972,12 +1043,14 @@ textarea.form-control {
 .swal-verde {
     border-radius: 14px;
     padding: 18px;
-    font-size: 13px; /* 🔹 más pequeña */
+    font-size: 13px;
+    /* 🔹 más pequeña */
 }
 
 /* Título */
 .swal-verde .swal2-title {
-    font-size: 18px; /* 🔹 más pequeño */
+    font-size: 18px;
+    /* 🔹 más pequeño */
     margin-bottom: 8px;
 }
 
@@ -989,7 +1062,8 @@ textarea.form-control {
 
 /* Contenedor botones */
 .swal-verde .swal2-actions {
-    gap: 14px; /* 🔹 separación entre botones */
+    gap: 14px;
+    /* 🔹 separación entre botones */
 }
 
 /* Botón confirmar */
@@ -1019,4 +1093,321 @@ textarea.form-control {
 
 .btn-verde-cancel:hover {
     background-color: #d5d5d5;
+}
+
+.examen-fisico label {
+    font-size: 10px !important;
+}
+
+.examen-fisico input {
+    font-size: 10px !important;
+    height: 18px !important;
+}
+
+.parasitos-wrapper {
+    margin-top: 10px;
+}
+
+.parasitos-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+}
+
+.parasito-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+    text-align: center;
+}
+
+.card-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.card-options {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    font-size: 12px;
+    margin-bottom: 5px;
+}
+
+.card-options input {
+    width: 14px;
+    height: 14px;
+    accent-color: var(--petcare-green);
+}
+
+.card-spec {
+    font-size: 11px;
+    color: #666;
+    margin-bottom: 3px;
+}
+
+.card-input {
+    border: none;
+    border-bottom: 1px solid #aaa;
+    width: 100%;
+    font-size: 11px;
+}
+
+.card-input:focus {
+    border-color: var(--petcare-green);
+    box-shadow: 0 0 3px rgba(139, 195, 74, 0.4);
+    outline: none;
+}
+
+
+.copro-row {
+    display: flex;
+    gap: 25px;
+    margin-top: 12px;
+    font-size: 13px;
+}
+
+.copro-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.parasitos-wrapper input[type="checkbox"] {
+    accent-color: #198754;
+}
+
+.diagnostico-card {
+
+    background: #fff;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+    margin-top: 10px;
+
+}
+
+.diagnostico-columns {
+
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+
+}
+
+.diag-header {
+
+    display: grid;
+    grid-template-columns: 1fr 40px 40px;
+    font-weight: bold;
+    font-size: 12px;
+    margin-bottom: 5px;
+
+}
+
+.diag-row {
+
+    display: grid;
+    grid-template-columns: 1fr 40px 40px;
+    align-items: center;
+    font-size: 10px;
+    margin-bottom: 4px;
+
+}
+
+.diag-row input {
+    width: 14px;
+    height: 14px;
+    accent-color: #198754;
+
+}
+
+.observaciones-box {
+
+    margin-top: 15px;
+    border-radius: 6px;
+    padding: 12px;
+    background: #fafafa;
+
+}
+
+.observaciones-title {
+
+    font-weight: bold;
+    font-size: 18px;
+    display: block;
+    margin-bottom: 8px;
+
+}
+
+.observaciones-text {
+
+    height: 80px;
+    resize: none;
+    font-size: 13px;
+
+}
+
+.diagnostico-box {
+
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 12px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+
+}
+
+.diagnostico-box label {
+
+    font-size: 13px;
+    margin-bottom: 6px;
+    display: block;
+
+}
+
+.diag-textarea {
+
+    height: 170px;
+    resize: none;
+    font-size: 13px;
+    line-height: 1.4;
+
+}
+
+.cajas-diagnostico {
+
+    margin-left: -5px;
+    margin-right: -5px;
+    margin-bottom: 10px;
+}
+
+.cajas-diagnostico .col-md-4 {
+
+    padding-left: 5px;
+    padding-right: 5px;
+
+}
+
+.motivo-container {
+
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    margin-bottom: 12px;
+
+}
+
+.motivo-input {
+    flex: 1;
+}
+
+.peso-box {
+    width: 120px;
+}
+
+.peso-input {
+
+    height: 38px;
+    text-align: center;
+    font-weight: bold;
+    padding-right: 40px;
+
+}
+
+.peso-wrapper{
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.peso-unit{
+    position: absolute;
+    right: 10px;
+    color: #555;
+    font-weight: 500;
+}
+.presupuesto-box {
+
+    width: 180px;
+    margin-bottom: 10px;
+
+}
+
+.presupuesto-input input {
+
+    height: 35px;
+
+}
+
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.hc-container {
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 14px;
+    color: #333;
+}
+
+.hc-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 8px;
+    margin-bottom: 15px;
+}
+
+.hc-date {
+    font-size: 12px;
+    color: #777;
+}
+
+.hc-status {
+    background: #28a745;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+}
+
+.hc-section {
+    margin-bottom: 18px;
+}
+
+.hc-section h6 {
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: #2e7d32;
+}
+
+.hc-row {
+    display: flex;
+    justify-content: space-between;
+}
+
+.hc-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.hc-inline {
+    line-height: 1.6;
+}
+
+.hc-total {
+    font-size: 18px;
+    font-weight: bold;
+    text-align: right;
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+}
+
+.modal-lg {
+    max-width:70%;
 }

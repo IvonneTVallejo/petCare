@@ -14,10 +14,10 @@ $(document).ready(function () {
 // ================= LOGIN =================
 $("#login").click(async function () {
 
-    let documento = $("#username").val();
+    let username = $("#username").val();
     let password = $("#password").val();
 
-    if (!documento || !password) {
+    if (!username || !password) {
         Swal.fire("Ingrese documento y contraseña");
         return;
     }
@@ -29,8 +29,10 @@ $("#login").click(async function () {
     const { data: vet, error } = await supabaseClient
         .from("personal_vet")
         .select("pv_email, pv_primer_nombre, pv_primer_apellido")
-        .eq("pv_documento", Number(documento))
+        .eq("pv_username",username)
         .single();
+
+    
 
     if (error || !vet) {
         hideLoader();
@@ -52,7 +54,7 @@ $("#login").click(async function () {
 
     // 3️⃣ Guardar sesión
     localStorage.setItem("user", JSON.stringify(data.user));
-    localStorage.setItem("nombreVet", vet.pv_primer_nombre );
+    localStorage.setItem("nombreVet", vet.pv_primer_nombre);
 
     // 4️⃣ Obtener rol
     const { data: rol } = await supabaseClient

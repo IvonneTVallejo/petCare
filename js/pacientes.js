@@ -157,6 +157,7 @@ document.getElementById("formMascota")
             dm_raza: document.getElementById("dm_raza").value,
             dm_sexo: document.getElementById("dm_sexo").value,
             dm_peso: document.getElementById("dm_peso").value,
+            dm_esterilizado: document.getElementById("dm_esterilizado").value,
             dm_fecha_nacimiento: document.getElementById("dm_fecha_nacimiento").value
         };
 
@@ -268,7 +269,7 @@ async function cargarMascotas() {
 
     const { data, error } = await supabaseClient
         .from("datos_mascota")
-        .select("dm_id_mascota, dm_nombre, dm_especie, dm_raza, dm_sexo, dm_peso, dm_fecha_nacimiento")
+        .select("dm_id_mascota, dm_nombre, dm_especie, dm_raza, dm_sexo, dm_peso, dm_esterilizado, dm_fecha_nacimiento")
         .eq("dm_dc_id_cliente", clienteId);
 
     const tbody = document.getElementById("tablaMascotas");
@@ -277,7 +278,7 @@ async function cargarMascotas() {
     if (error || data.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="7" class="text-center text-muted">
+                <td colspan="8" class="text-center text-muted">
                     No hay mascotas registradas
                 </td>
             </tr>`;
@@ -292,6 +293,11 @@ async function cargarMascotas() {
             <td>${m.dm_raza || "-"}</td>
             <td>${m.dm_sexo || "-"}</td>
             <td>${m.dm_peso ? m.dm_peso + " kg" : "-"}</td>
+            <td>
+            ${m.dm_esterilizado.toUpperCase() === "S"
+                ? '<span style="color:green;font-weight:bold;">✓</span>'
+                : '<span style="color:red;font-weight:bold;">✗</span>'}
+            </td>
             <td>${m.dm_fecha_nacimiento || "-"}</td>
             <td>
                 <button 
@@ -338,61 +344,61 @@ document.addEventListener("click", function (e) {
 
 
 document.getElementById("inputBuscarCliente")
-.addEventListener("input", async function () {
+    .addEventListener("input", async function () {
 
-    const texto = this.value.trim();
-    const tbody = document.getElementById("tablaResultadosClientes");
+        const texto = this.value.trim();
+        const tbody = document.getElementById("tablaResultadosClientes");
 
-    // 🔥 Limpiar resultados inmediatamente
-    tbody.innerHTML = `
+        // 🔥 Limpiar resultados inmediatamente
+        tbody.innerHTML = `
         <tr>
             <td colspan="4" class="text-center text-muted">
                 Buscando...
             </td>
         </tr>`;
 
-    if (texto.length < 3) {
-        tbody.innerHTML = `
+        if (texto.length < 3) {
+            tbody.innerHTML = `
             <tr>
                 <td colspan="4" class="text-center text-muted">
                     Escriba al menos 3 caracteres
                 </td>
             </tr>`;
-        return;
-    }
+            return;
+        }
 
-    // 🔥 Generamos un id único para esta búsqueda
-    const idBusqueda = ++busquedaActual;
+        // 🔥 Generamos un id único para esta búsqueda
+        const idBusqueda = ++busquedaActual;
 
-    let query = supabaseClient
-        .from("datos_cliente")
-        .select("dc_id_cliente, dc_identificacion, dc_nombre, dc_telefono");
+        let query = supabaseClient
+            .from("datos_cliente")
+            .select("dc_id_cliente, dc_identificacion, dc_nombre, dc_telefono");
 
-    if (!isNaN(texto)) {
-        query = query.eq("dc_identificacion", Number(texto));
-    } else {
-        query = query.ilike("dc_nombre", `%${texto}%`);
-    }
+        if (!isNaN(texto)) {
+            query = query.eq("dc_identificacion", Number(texto));
+        } else {
+            query = query.ilike("dc_nombre", `%${texto}%`);
+        }
 
-    const { data, error } = await query;
+        const { data, error } = await query;
 
-    // 🔥 Si esta respuesta NO es la más reciente, la ignoramos
-    if (idBusqueda !== busquedaActual) return;
+        // 🔥 Si esta respuesta NO es la más reciente, la ignoramos
+        if (idBusqueda !== busquedaActual) return;
 
-    tbody.innerHTML = "";
+        tbody.innerHTML = "";
 
-    if (error || !data || data.length === 0) {
-        tbody.innerHTML = `
+        if (error || !data || data.length === 0) {
+            tbody.innerHTML = `
             <tr>
                 <td colspan="4" class="text-center text-muted">
                     No se encontraron clientes
                 </td>
             </tr>`;
-        return;
-    }
+            return;
+        }
 
-    data.forEach(c => {
-        tbody.innerHTML += `
+        data.forEach(c => {
+            tbody.innerHTML += `
             <tr class="text-center">
                 <td>${c.dc_identificacion}</td>
                 <td>${c.dc_nombre}</td>
@@ -404,8 +410,8 @@ document.getElementById("inputBuscarCliente")
                     </button>
                 </td>
             </tr>`;
+        });
     });
-});
 
 
 document.getElementById("btnBuscarPaciente").addEventListener("click", () => {

@@ -107,6 +107,7 @@ body {
   font-size: 14px;
   border-radius: 10px;
 }
+
 .space {
   position: relative;
 }
@@ -180,6 +181,19 @@ body {
   max-width: 340px; /* 👈 MÁS PEQUEÑO */
 }
 
+#login {
+  background-color: #7ec9b0;
+  color: #1f4f46; /* color del texto */
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* efecto cuando pasas el mouse */
+#login:hover {
+  background-color: #6fbfa7;
+}
 
 @keyframes fadeUp {
   from {
