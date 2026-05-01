@@ -53,5 +53,5 @@ if (tipoUsuario === "asesor") {
 function cerrarSesion() {
     localStorage.clear();
     sessionStorage.clear();
-    window.location.href = '/index.html';
+    window.location.href = '../index.html';
 }

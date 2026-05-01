@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>PetCare System</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link href="https://unicons.iconscout.com/release/v4.0.0/css/line.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link href="../css/inventario.css" rel="stylesheet">
+</head>
+
+<!-- Inicio menu de navegacion lateral -->
+
+<body>
+    <nav>
+        <div class="logo-name">
+            <div class="logo-image">
+                <img src="../Images/logo.png" alt="">
+            </div>
+            <span class="logo_name">PetCare</span>
+        </div>
+        <div class="menu-items">
+            <ul class="nav-links">
+                <li>
+                    <a href="home.html" class="menu-link">
+                        <i><img src="../Images/inicio.png" class="user-icon"></i>
+                        <span class="link-name">Inicio</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="pacientes.html" class="menu-link">
+                        <i><img src="../Images/dueno-de-una-mascota.png" class="user-icon"></i>
+                        <span class="link-name">Pacientes</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="agenda.html" class="menu-link">
+                        <i><img src="../Images/agenda.png" class="user-icon"></i>
+                        <span class="link-name">Agenda</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="inventario.html" class="menu-link">
+                        <i><img src="../Images/inventario.svg" class="user-icon"></i>
+                        <span class="link-name">Inventario</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="proveedores.html" class="menu-link">
+                        <i><img src="../Images/proveedores.svg" class="user-icon"></i>
+                        <span class="link-name">Proveedores</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="compras.html" class="menu-link">
+                        <i><img src="../Images/compras.svg" class="user-icon"></i>
+                        <span class="link-name">Compras</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="ventas.html" class="menu-link">
+                        <i><img src="../Images/ventas.svg" class="user-icon"></i>
+                        <span class="link-name">Ventas</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="reportes.html" class="menu-link">
+                        <i><img src="../Images/reportes.svg" class="user-icon"></i>
+                        <span class="link-name">Reportes</span>
+                    </a>
+                </li>
+            </ul>
+            <ul class="logout-mode">
+                <li><a onclick="cerrarSesion()">
+                        <i><img src="../Images/cerrar-sesion.png" alt="Usuario" class="user-icon"></i>
+                        <span class="link-name">Logout</span>
+                    </a></li>
+            </ul>
+        </div>
+    </nav>
+    <!-- Fin menu de navegacion lateral -->
+
+    <!-- Inicio contenido principal -->
+    <section class="dashboard">
+        <div class="top">
+            <i class="uil uil-bars sidebar-toggle"></i>
+            <div id="usernameDisplay">
+                <img src="../Images/sesion.png" />
+            </div>
+        </div>
+        <div class="dash-content">
+            <div class="activity">
+                <div class="title">
+                    <img src="../Images/inventario.svg" alt="Inventario" class="user-icon">
+                    <span class="text">INVENTARIO</span>
+                </div>
+
+                <!-- Dashboard Summary Cards -->
+                <div class="summary-cards">
+                    <div class="summary-card card-stock-bajo">
+                        <div class="card-count" id="countStockBajo">0</div>
+                        <div class="card-label">Productos con Stock Bajo</div>
+                    </div>
+                    <div class="summary-card card-proximos-vencer">
+                        <div class="card-count" id="countProximosVencer">0</div>
+                        <div class="card-label">Próximos a Vencer (30 días)</div>
+                    </div>
+                    <div class="summary-card card-vencidos">
+                        <div class="card-count" id="countVencidos">0</div>
+                        <div class="card-label">Productos Vencidos</div>
+                    </div>
+                </div>
+
+                <!-- Filter Row -->
+                <div class="filter-row">
+                    <select class="form-control" id="filtroCategoriaProducto">
+                        <option value="">Todas las categorías</option>
+                    </select>
+                    <input type="text" class="form-control" id="buscarProducto" placeholder="Buscar producto...">
+                    <button type="button" class="btn btn-success" data-toggle="modal"
+                        data-target="#modalRegistroProducto" id="btnNuevoProducto">
+                        Nuevo Producto
+                    </button>
+                    <button type="button" class="btn btn-success" data-toggle="modal"
+                        data-target="#modalCategorias" id="btnCategorias">
+                        Categorías
+                    </button>
+                    <button type="button" class="btn btn-success" data-toggle="modal"
+                        data-target="#modalAjuste" id="btnAjuste">
+                        Ajuste
+                    </button>
+                </div>
+
+                <!-- Products Table -->
+                <div class="table-container">
+                    <table class="table table-sm table-striped table-hover align-middle mb-0">
+                        <thead class="text-center">
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Categoría</th>
+                                <th>Proveedor</th>
+                                <th>Stock</th>
+                                <th>Stock Mín.</th>
+                                <th>Precio Venta</th>
+                                <th>Lote</th>
+                                <th>Vencimiento</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaProductos">
+                            <tr>
+                                <td colspan="10" class="text-center text-muted">
+                                    Cargando productos...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- ============================================ -->
+                <!-- Modal: Registro/Edición de Producto -->
+                <!-- ============================================ -->
+                <div class="modal fade" id="modalRegistroProducto" tabindex="-1" aria-labelledby="modalRegistroProductoLabel"
+                    aria-hidden="true">
+                    <div class="modal-dialog modal-lg" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header bg-success text-white">
+                                <h5 class="modal-title" id="modalRegistroProductoLabel">Registro de Producto</h5>
+                                <button type="button" class="close text-white" data-dismiss="modal">
+                                    &times;
+                                </button>
+                            </div>
+                            <form id="formProducto">
+                                <div class="modal-body">
+                                    <input type="hidden" id="pr_id_producto">
+                                    <div class="form-group">
+                                        <label>Nombre *</label>
+                                        <input type="text" class="form-control" id="pr_nombre" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Descripción *</label>
+                                        <textarea class="form-control" id="pr_descripcion" rows="2" required></textarea>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Categoría *</label>
+                                                <select class="form-control" id="pr_cat_id_categoria" required>
+                                                    <option value="">Seleccione</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Proveedor *</label>
+                                                <select class="form-control" id="pr_prov_id_proveedor" required>
+                                                    <option value="">Seleccione</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Costo Compra *</label>
+                                                <input type="number" step="0.01" min="0" class="form-control" id="pr_costo_compra" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Precio Venta *</label>
+                                                <input type="number" step="0.01" min="0" class="form-control" id="pr_precio_venta" required>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Cantidad Disponible *</label>
+                                                <input type="number" min="0" class="form-control" id="pr_cantidad_disponible" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Stock Mínimo *</label>
+                                                <input type="number" min="0" class="form-control" id="pr_stock_minimo" required>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Lote *</label>
+                                                <input type="text" class="form-control" id="pr_lote" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group" id="grupoFechaVencimiento">
+                                                <label>Fecha Vencimiento</label>
+                                                <input type="date" class="form-control" id="pr_fecha_vencimiento" disabled>
+                                                <small class="text-muted" id="msgFechaVencimiento">Seleccione una categoría que requiera fecha de vencimiento</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">
+                                        Cancelar
+                                    </button>
+                                    <button type="submit" id="btnGuardarProducto" class="btn btn-success btn-sm">
+                                        Guardar
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================ -->
+                <!-- Modal: Gestión de Categorías -->
+                <!-- ============================================ -->
+                <div class="modal fade" id="modalCategorias" tabindex="-1" aria-labelledby="modalCategoriasLabel"
+                    aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header bg-success text-white">
+                                <h5 class="modal-title" id="modalCategoriasLabel">Gestión de Categorías</h5>
+                                <button type="button" class="close text-white" data-dismiss="modal">
+                                    &times;
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="form-group">
+                                    <label>Nueva Categoría</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="nuevaCategoriaNombre"
+                                            placeholder="Nombre de la categoría">
+                                        <div class="input-group-append">
+                                            <button class="btn btn-success btn-sm" type="button" id="btnAgregarCategoria">
+                                                Agregar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <label>Categorías existentes</label>
+                                <div class="categorias-list" id="listaCategorias">
+                                    <!-- Populated dynamically -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================ -->
+                <!-- Modal: Kardex -->
+                <!-- ============================================ -->
+                <div class="modal fade" id="modalKardex" tabindex="-1" aria-labelledby="modalKardexLabel"
+                    aria-hidden="true">
+                    <div class="modal-dialog modal-xl" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header bg-success text-white">
+                                <h5 class="modal-title" id="modalKardexLabel">Kardex - <span id="kardexProductoNombre"></span></h5>
+                                <button type="button" class="close text-white" data-dismiss="modal">
+                                    &times;
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="kardex-filters">
+                                    <label>Desde:</label>
+                                    <input type="date" class="form-control" id="kardexFechaInicio">
+                                    <label>Hasta:</label>
+                                    <input type="date" class="form-control" id="kardexFechaFin">
+                                    <button class="btn btn-success btn-sm" type="button" id="btnFiltrarKardex">
+                                        Filtrar
+                                    </button>
+                                </div>
+                                <input type="hidden" id="kardexProductoId">
+                                <div class="kardex-table-container">
+                                    <table class="table table-sm table-striped table-hover align-middle mb-0">
+                                        <thead class="text-center">
+                                            <tr>
+                                                <th>Fecha</th>
+                                                <th>Tipo</th>
+                                                <th>Referencia</th>
+                                                <th>Entrada</th>
+                                                <th>Salida</th>
+                                                <th>Costo Unit.</th>
+                                                <th>Saldo</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tablaKardex">
+                                            <tr>
+                                                <td colspan="7" class="text-center text-muted">
+                                                    Sin movimientos
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================ -->
+                <!-- Modal: Ajuste de Inventario -->
+                <!-- ============================================ -->
+                <div class="modal fade" id="modalAjuste" tabindex="-1" aria-labelledby="modalAjusteLabel"
+                    aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header bg-success text-white">
+                                <h5 class="modal-title" id="modalAjusteLabel">Ajuste de Inventario</h5>
+                                <button type="button" class="close text-white" data-dismiss="modal">
+                                    &times;
+                                </button>
+                            </div>
+                            <form id="formAjuste">
+                                <div class="modal-body">
+                                    <div class="form-group">
+                                        <label>Producto *</label>
+                                        <select class="form-control" id="ajuste_producto" required>
+                                            <option value="">Seleccione un producto</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Tipo de Ajuste *</label>
+                                        <select class="form-control" id="ajuste_tipo" required>
+                                            <option value="">Seleccione</option>
+                                            <option value="ajuste_positivo">Positivo (entrada)</option>
+                                            <option value="ajuste_negativo">Negativo (salida)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Cantidad *</label>
+                                        <input type="number" min="1" class="form-control" id="ajuste_cantidad" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Motivo *</label>
+                                        <textarea class="form-control" id="ajuste_motivo" rows="2" required></textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">
+                                        Cancelar
+                                    </button>
+                                    <button type="submit" class="btn btn-success btn-sm" id="btnGuardarAjuste">
+                                        Registrar Ajuste
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+    <!-- Fin contenido principal -->
+
+    <!-- Import librerias JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://code.jquery.com/jquery-3.6.3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
+    <script src="../js/script.js"></script>
+    <script src="../js/inventario.js"></script>
+    <link rel="stylesheet" href="../css/loader.css">
+    <script src="../js/loader.js"></script>
+</body>
+
+</html>

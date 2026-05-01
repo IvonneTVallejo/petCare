@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-    <title>SOFTLIB - Calculo Actuarial</title>
+    <title>PetCare System</title>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -75,7 +75,6 @@
                     </a>
                 </li>
             </ul>
-
             <ul class="logout-mode">
                 <li><a onclick="cerrarSesion()">
                         <i><img src="../Images/cerrar-sesion.png" alt="Usuario" class="user-icon"></i>
@@ -86,7 +85,7 @@
     </nav>
     <!-- Fin menu de navegacion lateral -->
 
-    <!-- Inicio tabla y modal para insertar nuevo registro -->
+    <!-- Inicio contenido principal -->
     <section class="dashboard">
         <div class="top">
             <i class="uil uil-bars sidebar-toggle"></i>
@@ -97,81 +96,71 @@
         <div class="dash-content">
             <div class="activity">
                 <div class="title">
-                    <img src="../Images/informe-medico.png" alt="Usuario" class="user-icon">
-                    <span class="text">CONSULTA</span>
+                    <img src="../Images/reportes.svg" alt="Reportes" class="user-icon">
+                    <span class="text">REPORTES</span>
                 </div>
 
+                <!-- Report Filters -->
+                <div class="filter-row">
+                    <select class="form-control" id="tipoReporte">
+                        <option value="mas_vendidos">Más vendidos</option>
+                        <option value="baja_rotacion">Baja rotación</option>
+                        <option value="utilidad">Utilidad</option>
+                        <option value="inventario_valorizado">Inventario valorizado</option>
+                    </select>
 
+                    <label class="mb-0 ml-2" for="fechaInicio">Desde:</label>
+                    <input type="date" class="form-control" id="fechaInicio">
+
+                    <label class="mb-0 ml-2" for="fechaFin">Hasta:</label>
+                    <input type="date" class="form-control" id="fechaFin">
+
+                    <select class="form-control" id="filtroCategoria" style="display: none;">
+                        <option value="">Todas las categorías</option>
+                    </select>
+
+                    <button type="button" class="btn btn-success" id="btnGenerarReporte">
+                        Generar Reporte
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="btnImprimir">
+                        Imprimir
+                    </button>
+                </div>
+
+                <!-- Results Area -->
+                <div class="table-container" id="resultadosReporte">
+                    <table class="table table-sm table-striped table-hover align-middle mb-0">
+                        <thead class="text-center" id="tablaReporteHead">
+                            <tr>
+                                <th colspan="5">Seleccione un tipo de reporte y haga clic en "Generar Reporte"</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaReporteBody">
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">
+                                    Sin datos para mostrar
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
             </div>
         </div>
     </section>
-    <!-- Fin tabla y modal para insertar nuevo registro -->
+    <!-- Fin contenido principal -->
 
-    <!-- Inicio modal para actualizar empleador-->
-    <div class="modal fade" id="actualizarEmpleadorModal" tabindex="-1" aria-labelledby="exampleModalLabel"
-        aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header" style="background-color: #e5be01">
-                    <h5 class="modal-title" id="exampleModalLabel">Actualizar Empleador
-                    </h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">
-                            <font style="vertical-align: inherit;">
-                                <font style="vertical-align: inherit;">×</font>
-                            </font>
-                        </span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label for="tipoUP">Tipo Identificación:</label>
-                        <select name="tipoUP" id="tipoUP" class="form-control">
-                            <option value="NIT">Número de Identificación Tributaria</option>
-                            <option value="CC">Cédula de Ciudadanía</option>
-                            <option value="CE">Cédula de Extranjería</option>
-                            <option value="TE">Tarjeta de Extranjería</option>
-                            <option value="PAP">Pasaporte</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="nitUP">Identificación:</label>
-                        <input type="text" class="form-control" id="nitUP" disabled>
-                    </div>
-                    <div class="form-group">
-                        <label for="nombreUP">Nombre:</label>
-                        <input type="text" class="form-control" id="nombreUP">
-                    </div>
-                    <div class="form-group">
-                        <label for="telefonoUP">Teléfono:</label>
-                        <input type="text" class="form-control" id="telefonoUP">
-                    </div>
-                    <div class="form-group">
-                        <label for="correoUP">Correo:</label>
-                        <input type="email" class="form-control" id="correoUP">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-warning" id="registrar" onclick="actualizarEmpleador()"
-                        style="font-size: 13px;">Guardar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- Fin modal para actualizar empleador-->
-
-    <!-- Import librerias JS-->
+    <!-- Import librerias JS -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://code.jquery.com/jquery-3.6.3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js"
         integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
         crossorigin="anonymous"></script>
     <script src="../js/script.js"></script>
-    <script src="../js/consultas.js"></script>
+    <script src="../js/reportes.js"></script>
     <link rel="stylesheet" href="../css/loader.css">
     <script src="../js/loader.js"></script>
-
 </body>
 
 </html>

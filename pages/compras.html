@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>PetCare System</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link href="https://unicons.iconscout.com/release/v4.0.0/css/line.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link href="../css/inventario.css" rel="stylesheet">
+</head>
+
+<!-- Inicio menu de navegacion lateral -->
+
+<body>
+    <nav>
+        <div class="logo-name">
+            <div class="logo-image">
+                <img src="../Images/logo.png" alt="">
+            </div>
+            <span class="logo_name">PetCare</span>
+        </div>
+        <div class="menu-items">
+            <ul class="nav-links">
+                <li>
+                    <a href="home.html" class="menu-link">
+                        <i><img src="../Images/inicio.png" class="user-icon"></i>
+                        <span class="link-name">Inicio</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="pacientes.html" class="menu-link">
+                        <i><img src="../Images/dueno-de-una-mascota.png" class="user-icon"></i>
+                        <span class="link-name">Pacientes</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="agenda.html" class="menu-link">
+                        <i><img src="../Images/agenda.png" class="user-icon"></i>
+                        <span class="link-name">Agenda</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="inventario.html" class="menu-link">
+                        <i><img src="../Images/inventario.svg" class="user-icon"></i>
+                        <span class="link-name">Inventario</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="proveedores.html" class="menu-link">
+                        <i><img src="../Images/proveedores.svg" class="user-icon"></i>
+                        <span class="link-name">Proveedores</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="compras.html" class="menu-link">
+                        <i><img src="../Images/compras.svg" class="user-icon"></i>
+                        <span class="link-name">Compras</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="ventas.html" class="menu-link">
+                        <i><img src="../Images/ventas.svg" class="user-icon"></i>
+                        <span class="link-name">Ventas</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="reportes.html" class="menu-link">
+                        <i><img src="../Images/reportes.svg" class="user-icon"></i>
+                        <span class="link-name">Reportes</span>
+                    </a>
+                </li>
+            </ul>
+            <ul class="logout-mode">
+                <li><a onclick="cerrarSesion()">
+                        <i><img src="../Images/cerrar-sesion.png" alt="Usuario" class="user-icon"></i>
+                        <span class="link-name">Logout</span>
+                    </a></li>
+            </ul>
+        </div>
+    </nav>
+    <!-- Fin menu de navegacion lateral -->
+
+    <!-- Inicio contenido principal -->
+    <section class="dashboard">
+        <div class="top">
+            <i class="uil uil-bars sidebar-toggle"></i>
+            <div id="usernameDisplay">
+                <img src="../Images/sesion.png" />
+            </div>
+        </div>
+        <div class="dash-content">
+            <div class="activity">
+                <div class="title">
+                    <img src="../Images/compras.svg" alt="Compras" class="user-icon">
+                    <span class="text">COMPRAS</span>
+                </div>
+
+                <!-- Filter Row - Órdenes de Compra -->
+                <div class="filter-row">
+                    <button type="button" class="btn btn-success" id="btnNuevaOrden">
+                        Nueva Orden
+                    </button>
+                </div>
+
+                <!-- Tabla de Órdenes de Compra -->
+                <h6 class="mb-2 mt-3"><strong>Órdenes de Compra</strong></h6>
+                <div class="table-container">
+                    <table class="table table-sm table-striped table-hover align-middle mb-0">
+                        <thead class="text-center">
+                            <tr>
+                                <th>Nº Orden</th>
+                                <th>Proveedor</th>
+                                <th>Fecha</th>
+                                <th>Total</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaOrdenes">
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">
+                                    Cargando órdenes...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Tabla de Facturas de Compra -->
+                <div class="filter-row mt-4">
+                    <h6 class="mb-0"><strong>Facturas de Compra</strong></h6>
+                    <button type="button" class="btn btn-success" id="btnNuevaFactura">
+                        Registrar Factura
+                    </button>
+                </div>
+                <div class="table-container">
+                    <table class="table table-sm table-striped table-hover align-middle mb-0">
+                        <thead class="text-center">
+                            <tr>
+                                <th>Nº Factura</th>
+                                <th>Proveedor</th>
+                                <th>Fecha</th>
+                                <th>Monto</th>
+                                <th>Estado Pago</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaFacturas">
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">
+                                    Cargando facturas...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- ============================================ -->
+                <!-- Modal: Nueva Orden de Compra -->
+                <!-- ============================================ -->
+                <div class="modal fade" id="modalNuevaOrden" tabindex="-1" aria-labelledby="modalNuevaOrdenLabel"
+                    aria-hidden="true">
+                    <div class="modal-dialog modal-xl" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header bg-success text-white">
+                                <h5 class="modal-title" id="modalNuevaOrdenLabel">Nueva Orden de Compra</h5>
+                                <button type="button" class="close text-white" data-dismiss="modal">
+                                    &times;
+                                </button>
+                            </div>
+                            <form id="formNuevaOrden">
+                                <div class="modal-body">
+                                    <div class="form-group">
+                                        <label>Proveedor *</label>
+                                        <select class="form-control" id="ordenProveedor" required>
+                                            <option value="">Seleccione un proveedor</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Tabla dinámica de líneas -->
+                                    <label>Líneas de la Orden</label>
+                                    <div class="table-container">
+                                        <table class="table table-sm table-striped table-hover align-middle mb-0">
+                                            <thead class="text-center">
+                                                <tr>
+                                                    <th>Producto</th>
+                                                    <th>Cantidad</th>
+                                                    <th>Costo Unitario</th>
+                                                    <th>Subtotal</th>
+                                                    <th></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="tablaLineasOrden">
+                                                <!-- Líneas dinámicas -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <button type="button" class="btn btn-success btn-sm mt-2" id="btnAgregarLinea">
+                                        + Agregar línea
+                                    </button>
+
+                                    <div class="text-right mt-3">
+                                        <h5><strong>Total General: $<span id="totalGeneralOrden">0</span></strong></h5>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">
+                                        Cancelar
+                                    </button>
+                                    <button type="submit" class="btn btn-success btn-sm" id="btnGuardarOrden">
+                                        Guardar Orden
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================ -->
+                <!-- Modal: Recepción de Orden -->
+                <!-- ============================================ -->
+                <div class="modal fade" id="modalRecepcion" tabindex="-1" aria-labelledby="modalRecepcionLabel"
+                    aria-hidden="true">
+                    <div class="modal-dialog modal-xl" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header bg-success text-white">
+                                <h5 class="modal-title" id="modalRecepcionLabel">Recepción de Orden - <span id="recepcionOrdenNumero"></span></h5>
+                                <button type="button" class="close text-white" data-dismiss="modal">
+                                    &times;
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <p><strong>Proveedor:</strong> <span id="recepcionProveedorNombre"></span></p>
+                                <input type="hidden" id="recepcionOrdenId">
+
+                                <div class="table-container">
+                                    <table class="table table-sm table-striped table-hover align-middle mb-0">
+                                        <thead class="text-center">
+                                            <tr>
+                                                <th>Producto</th>
+                                                <th>Cantidad Solicitada</th>
+                                                <th>Cantidad Recibida</th>
+                                                <th>Cantidad Pendiente</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tablaLineasRecepcion">
+                                            <!-- Líneas dinámicas -->
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="form-group mt-3">
+                                    <label>Número de Factura (opcional)</label>
+                                    <input type="text" class="form-control" id="recepcionNumeroFactura"
+                                        placeholder="Ingrese número de factura">
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">
+                                    Cancelar
+                                </button>
+                                <button type="button" class="btn btn-success btn-sm" id="btnConfirmarRecepcion">
+                                    Confirmar Recepción
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================ -->
+                <!-- Modal: Registro de Factura -->
+                <!-- ============================================ -->
+                <div class="modal fade" id="modalFactura" tabindex="-1" aria-labelledby="modalFacturaLabel"
+                    aria-hidden="true">
+                    <div class="modal-dialog modal-lg" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header bg-success text-white">
+                                <h5 class="modal-title" id="modalFacturaLabel">Registro de Factura de Compra</h5>
+                                <button type="button" class="close text-white" data-dismiss="modal">
+                                    &times;
+                                </button>
+                            </div>
+                            <form id="formFactura">
+                                <div class="modal-body">
+                                    <div class="form-group">
+                                        <label>Número de Factura *</label>
+                                        <input type="text" class="form-control" id="fc_numero_factura" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Fecha de Factura *</label>
+                                        <input type="date" class="form-control" id="fc_fecha_factura" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Proveedor *</label>
+                                        <select class="form-control" id="fc_prov_id_proveedor" required>
+                                            <option value="">Seleccione un proveedor</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Orden Asociada *</label>
+                                        <select class="form-control" id="fc_oc_id_orden" required>
+                                            <option value="">Seleccione una orden</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Monto Total *</label>
+                                        <input type="number" step="0.01" min="0" class="form-control" id="fc_monto_total" required>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">
+                                        Cancelar
+                                    </button>
+                                    <button type="submit" class="btn btn-success btn-sm" id="btnGuardarFactura">
+                                        Guardar Factura
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+    <!-- Fin contenido principal -->
+
+    <!-- Import librerias JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://code.jquery.com/jquery-3.6.3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
+    <script src="../js/script.js"></script>
+    <script src="../js/compras.js"></script>
+    <link rel="stylesheet" href="../css/loader.css">
+    <script src="../js/loader.js"></script>
+</body>
+
+</html>
