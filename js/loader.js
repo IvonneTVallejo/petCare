@@ -5,7 +5,7 @@ function showLoader() {
         background: 'transparent',
         html: `
             <div class="logo-loader">
-                <img src="/Images/espera.png" alt="PetCare" class="logo-img" >
+                <img src="../Images/espera.png" alt="PetCare" class="logo-img" >
             </div>
         `
     });

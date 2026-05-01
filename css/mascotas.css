@@ -28,7 +28,7 @@
 }
 
 body {
-    background: linear-gradient(rgba(182, 177, 177, 0.562), rgba(182, 177, 177, 0.562)), url(/Images/fondo.jpg) no-repeat center center fixed !important;
+    background: linear-gradient(rgba(182, 177, 177, 0.562), rgba(182, 177, 177, 0.562)), url(../Images/fondo.jpg) no-repeat center center fixed !important;
     background-size: cover !important;
     min-height: 100vh;
     background-color: var(--primary-color);
