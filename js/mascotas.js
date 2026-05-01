@@ -286,7 +286,7 @@ async function cargarConsultas() {
         tbody.innerHTML += `
         <tr class="text-center align-middle">
             <td>
-                ${c.cm_fecha_consulta
+            ${c.cm_fecha_consulta
                 ? c.cm_fecha_consulta.split(" ")[0].split("-").reverse().join("/")
                 : "-"
             }
@@ -315,64 +315,273 @@ async function cargarConsultas() {
 }
 
 
+// ========================================
+// 🔥 MAPEOS (CLAVE PARA QUE FUNCIONE TODO)
+// ========================================
+
+const mapaEcto = {
+    pulgas: "e_pulgas",
+    garrapatas: "e_garrapatas",
+    prurito: "e_prurito",
+    copro_directo: "e_copro_directo",
+    copro_flotacion: "e_copro_flotacion"
+};
+
+const mapaPlan = {
+    raspado: "pd_raspado",
+    citologia: "pd_citologia",
+    contraste: "pd_rx_contraste",
+    renal: "pd_perfil_renal",
+    sanguinea: "pd_quimica_sanguinea",
+    preanestesico: "pd_perfil_preanestesico",
+    hepatico: "pd_perfil_hepatico",
+    snap: "pd_snap",
+    radiografia: "pd_radiografia",
+    endoscopia: "pd_endoscopia",
+    hospitalizacion: "pd_hospitalizacion",
+    sedacion: "pd_sedacion",
+    anestesia: "pd_anestesia",
+    suturas: "pd_suturas",
+    observacion: "pd_observacion",
+    interconsulta: "pd_interconsulta"
+};
+
+// ========================================
+// 🔥 EXAMEN FISICO DINÁMICO
+// ========================================
+
+const examenFisicoCampos = [
+    ["F.R.", "ef_fr"],
+    ["Apariencia general", "ef_apariencia_general"],
+    ["F.C.", "ef_fc"],
+    ["Estado conciencia", "ef_estado_conciencia"],
+    ["Pulso", "ef_pulso"],
+    ["Color mucosas", "ef_color_mucosas"],
+    ["TLLC", "ef_tllc"],
+    ["Boca y dientes", "ef_boca_dientes"],
+    ["Deshidratación", "ef_deshidratacion"],
+    ["Ojos", "ef_ojos"],
+    ["Trufa", "ef_trufa"],
+    ["Oídos", "ef_oidos"],
+    ["Turgencia piel", "ef_turgencia_piel"],
+    ["Piel y pelo", "ef_piel_pelo"],
+    ["Temperatura", "ef_temperatura"],
+    ["Sonidos cardiácos", "ef_sonidos_cardiacos"],
+    ["Reflejo pupilar", "ef_reflejo_pupilar"],
+    ["S. Músculo esquelético", "ef_musculo_esqueletico"],
+    ["Palp. abdominal", "ef_palp_abdominal"],
+    ["Otros", "ef_otros"]
+];
+
+function generarExamenFisico() {
+
+    const container = document.getElementById("examenFisicoContainer");
+    if (!container) return;
+
+    let html = "";
+
+    examenFisicoCampos.forEach(campo => {
+        html += `
+            <div class="campo">
+                <label>${campo[0]}</label>
+                <input type="text" id="${campo[1]}" class="form-control">
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}
+
+// ========================================
+// 🔒 BLOQUEAR / DESBLOQUEAR FORM
+// ========================================
+
+function bloquearFormularioConsulta() {
+    const form = document.getElementById("formConsulta");
+
+    form.querySelectorAll("input, textarea").forEach(el => el.disabled = true);
+    form.querySelectorAll("input[type='checkbox']").forEach(el => el.disabled = true);
+}
+
+function desbloquearFormularioConsulta() {
+    const form = document.getElementById("formConsulta");
+
+    form.querySelectorAll("input, textarea").forEach(el => el.disabled = false);
+    form.querySelectorAll("input[type='checkbox']").forEach(el => el.disabled = false);
+}
+
+// ========================================
+// 🔥 VER CONSULTA COMPLETA
+// ========================================
+
 document.addEventListener("click", async function (e) {
 
     if (!e.target.classList.contains("btn-ver-consulta")) return;
 
-    consultaActualId = e.target.dataset.id;
-    debugger;
-    // Consultar la consulta seleccionada
-    const { data: consulta, error } = await supabaseClient
-        .from("consulta_medica")
-        .select(`
-    cm_fecha_consulta,
-    cm_motivo_consulta,
-    cm_ec_id_estado,
-    estado_consulta!consulta_medica_cm_ec_id_estado_fkey (
-            ec_estado_consulta
-        )
-`)
+    const id = e.target.dataset.id;
 
-        .eq("cm_id_consulta", consultaActualId)
-        .single();
+    try {
 
-    if (error || !consulta) {
+        // =========================
+        // 🔹 CONSULTA PRINCIPAL
+        // =========================
+        const { data: consulta } = await supabaseClient
+            .from("consulta_medica")
+            .select("*")
+            .eq("cm_id_consulta", id)
+            .single();
+
+        // =========================
+        // 🔹 ESTADO
+        // =========================
+        let estadoTexto = "-";
+
+        if (consulta.cm_ec_id_estado) {
+            const { data: estadoData } = await supabaseClient
+                .from("estado_consulta")
+                .select("ec_estado_consulta")
+                .eq("ec_id_estado", consulta.cm_ec_id_estado)
+                .single();
+
+            estadoTexto = estadoData?.ec_estado_consulta || "-";
+        }
+
+        // =========================
+        // 🔹 EXAMEN FISICO
+        // =========================
+        const { data: examen } = await supabaseClient
+            .from("examen_fisico")
+            .select("*")
+            .eq("ef_cm_id_consulta", id)
+            .single();
+
+        // =========================
+        // 🔹 ECTOPARASITOS
+        // =========================
+        const { data: ecto } = await supabaseClient
+            .from("ectoparasitos")
+            .select("*")
+            .eq("e_cm_id_consulta", id)
+            .single();
+
+        // =========================
+        // 🔹 PLAN DIAGNOSTICO
+        // =========================
+        const { data: plan } = await supabaseClient
+            .from("plan_diagnostico")
+            .select("*")
+            .eq("pd_cm_id_consulta", id)
+            .single();
+
+        console.log("CONSULTA:", consulta);
+        console.log("EXAMEN:", examen);
+        console.log("ECTO:", ecto);
+        console.log("PLAN:", plan);
+
+        generarExamenFisico();
+
+        setTimeout(() => {
+
+            // =========================
+            // 🔹 LLENAR CAMPOS
+            // =========================
+
+            cm_motivo_consulta.value = consulta.cm_motivo_consulta || "";
+            cm_observaciones.value = consulta.cm_observaciones || "";
+
+            cm_diagnosticos_diferenciales.value = consulta.cm_diagnosticos_diferenciales || "";
+            cm_diagnostico_definitivo.value = consulta.cm_diagnostico_definitivo || "";
+            cm_medicamentos_aplicados.value = consulta.cm_medicamentos_aplicados || "";
+
+            cm_presupuesto.value = consulta.cm_presupuesto || "";
+
+            // =========================
+            // 🔹 EXAMEN FISICO
+            // =========================
+
+            const ef = examen || {};
+
+            ef_peso_mascota.value = ef.ef_peso_mascota || "";
+
+            examenFisicoCampos.forEach(campo => {
+                const input = document.getElementById(campo[1]);
+                if (input) input.value = ef[campo[1]] || "";
+            });
+
+            // =========================
+            // 🔹 CHECKBOXES (FIX REAL)
+            // =========================
+
+            document.querySelectorAll("[data-group]").forEach(chk => {
+
+                const grupo = chk.dataset.group;
+                chk.checked = false;
+
+                // ECTOPARASITOS
+                if (ecto && mapaEcto[grupo]) {
+
+                    let valorBD = ecto[mapaEcto[grupo]];
+
+                    if (valorBD) {
+                        valorBD = valorBD.toString().trim().toUpperCase();
+                    }
+
+                    if (valorBD === chk.value) {
+                        chk.checked = true;
+                    }
+                }
+
+                // PLAN DIAGNOSTICO
+                if (plan && mapaPlan[grupo]) {
+                    if (plan[mapaPlan[grupo]] === chk.value) {
+                        chk.checked = true;
+                    }
+                }
+
+            });
+
+            // DESCRIPCIONES
+            e_descripcion_pulgas.value = ecto?.e_descripcion_pulgas || "";
+            e_descripcion_garrapatas.value = ecto?.e_descripcion_garrapatas || "";
+            e_descripcion_pruito.value = ecto?.e_descripcion_prurito || "";
+
+            // =========================
+            // 🔹 FECHA Y ESTADO
+            // =========================
+
+            let fechaFormateada = "-";
+            if (consulta.cm_fecha_consulta) {
+                const [y, m, d] = consulta.cm_fecha_consulta.split(" ")[0].split("-");
+                fechaFormateada = `${d}/${m}/${y}`;
+            }
+
+            vc_fecha.textContent = fechaFormateada;
+            vc_estado.textContent = estadoTexto;
+            vc_motivo.textContent = consulta.cm_motivo_consulta || "-";
+
+            // =========================
+            // 🔹 UI
+            // =========================
+
+            document.getElementById("tituloModalConsulta").textContent = "Detalle consulta";
+            document.getElementById("headerVerConsulta").style.display = "block";
+
+            document.getElementById("btnGuardarConsulta").style.display = "none";
+            document.getElementById("btnLimpiarCampos").style.display = "none";
+            document.getElementById("btnFinalizarConsulta").style.display = "inline-block";
+
+            bloquearFormularioConsulta();
+
+        }, 200);
+
+        $('#modalRegistroConsulta').modal('show');
+
+    } catch (error) {
+        console.error(error);
         Swal.fire("Error", "No se pudo cargar la consulta", "error");
-        return;
     }
 
-    // Llenar el modal
-    const fecha = consulta.cm_fecha_consulta.split(" ")[0]; // yyyy-mm-dd
-    const [year, month, day] = fecha.split("-");
-
-    document.getElementById("vc_fecha").textContent =
-        `${day}/${month}/${year}`;
-
-    document.getElementById("vc_motivo").textContent =
-        consulta.cm_motivo_consulta || "-";
-
-    document.getElementById("vc_estado").textContent =
-        consulta.estado_consulta?.ec_estado_consulta || "-";
-
-    const estadoId = Number(consulta.cm_ec_id_estado);
-
-    const btnFinalizar = document.getElementById("btnFinalizarConsulta");
-
-    if (estadoId === 2) {
-        // Finalizada
-
-        btnFinalizar.disabled = true;
-        btnFinalizar.classList.add("disabled");
-
-    } else {
-        // Abierta
-        btnFinalizar.disabled = false;
-        btnFinalizar.classList.remove("disabled");
-    }
-    // Abrir modal
-    $('#modalVerConsulta').modal('show');
 });
-
 
 
 document.getElementById("btnFinalizarConsulta").onclick = async () => {
@@ -450,83 +659,24 @@ document.getElementById("btnDescargarFormula").onclick = async () => {
 
 
 document.getElementById("btnRegresar").onclick = () => {
-
     const clienteId = localStorage.getItem("clienteSeleccionado");
-
     if (!clienteId) {
         window.location.href = "pacientes.html";
         return;
     }
-
     localStorage.setItem("tutorVolver", clienteId);
 
     window.location.href = "pacientes.html";
 };
 
-const examenFisicoCampos = [
-    ["F.R.", "ef_fr"],
-    ["Apariencia general", "ef_apariencia_general"],
-    ["F.C.", "ef_fc"],
-    ["Estado conciencia", "ef_estado_conciencia"],
 
-    ["Pulso", "ef_pulso"],
-    ["Color mucosas", "ef_color_mucosas"],
-    ["TLLC", "ef_tllc"],
-    ["Boca y dientes", "ef_boca_dientes"],
+$('#modalRegistroConsulta').on('show.bs.modal', function () {
 
-    ["Deshidratación", "ef_deshidratacion"],
-    ["Ojos", "ef_ojos"],
-    ["Trufa", "ef_trufa"],
-    ["Oídos", "ef_oidos"],
+    document.getElementById("tituloModalConsulta").textContent = "Información consulta";
+    document.getElementById("headerVerConsulta").style.display = "none";
+    document.getElementById("btnGuardarConsulta").style.display = "inline-block";
+    document.getElementById("btnLimpiarCampos").style.display = "inline-block";
+    document.getElementById("btnFinalizarConsulta").style.display = "none";
 
-    ["Turgencia piel", "ef_turgencia_piel"],
-    ["Piel y pelo", "ef_piel_pelo"],
-    ["Temperatura", "ef_temperatura"],
-    ["Sonidos cardiácos", "ef_sonidos_cardiacos"],
-
-    ["Reflejo pupilar", "ef_reflejo_pupilar"],
-    ["S. Músculo esquelético", "ef_musculo_esqueletico"],
-    ["Palp. abdominal", "ef_palp_abdominal"],
-    ["Otros", "ef_otros"]
-];
-
-function generarExamenFisico() {
-
-    let container = document.getElementById("examenFisicoContainer");
-
-    let html = "";
-
-    examenFisicoCampos.forEach(campo => {
-
-        html += `
-<div class="campo">
-<label>${campo[0]}</label>
-<input type="text" id="${campo[1]}">
-</div>
-`;
-
-    });
-
-    container.innerHTML = html;
-
-}
-
-generarExamenFisico();
-
-document.querySelectorAll('input[type="checkbox"][data-group]').forEach(check => {
-
-    check.addEventListener('change', function () {
-
-        let group = this.dataset.group;
-
-        document.querySelectorAll(`input[data-group="${group}"]`).forEach(c => {
-
-            if (c !== this) {
-                c.checked = false;
-            }
-
-        });
-
-    });
-
+    desbloquearFormularioConsulta();
 });
