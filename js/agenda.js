@@ -17,18 +17,18 @@ let veterinariosCache = [];
 let clientesCache = [];
 
 // Transiciones de estado permitidas
-// 1=Programada, 2=Confirmada, 3=Cancelada, 4=En curso, 5=Finalizada, 6=No asistió
+// 1=Programada, 2=Confirmada, 3=Cancelada, 4=Generar Consulta, 5=Finalizada, 6=No asistió
 const TRANSICIONES_ESTADO = {
     1: [2, 3],       // Programada → Confirmada, Cancelada
-    2: [4, 3, 6],    // Confirmada → En curso, Cancelada, No asistió
-    4: [5]            // En curso → Finalizada
+    2: [4, 3, 6],    // Confirmada → Generar Consulta, Cancelada, No asistió
+    4: [5]            // Generar Consulta → Finalizada
 };
 
 const COLORES_ESTADO = {
     1: '#007bff',  // Programada - Azul
     2: '#28a745',  // Confirmada - Verde
     3: '#dc3545',  // Cancelada - Rojo
-    4: '#ffc107',  // En curso - Amarillo
+    4: '#ffc107',  // Generar Consulta - Amarillo
     5: '#6c757d',  // Finalizada - Gris
     6: '#fd7e14'   // No asistió - Naranja
 };
@@ -37,7 +37,7 @@ const NOMBRES_ESTADO = {
     1: 'Programada',
     2: 'Confirmada',
     3: 'Cancelada',
-    4: 'En curso',
+    4: 'Generar Consulta',
     5: 'Finalizada',
     6: 'No asistió'
 };
@@ -219,7 +219,7 @@ function inicializarCalendario() {
             right: 'timeGridDay,timeGridWeek,dayGridMonth'
         },
         slotMinTime: '06:00:00',
-        slotMaxTime: '21:00:00',
+        slotMaxTime: '23:59:00',
         slotDuration: '00:30:00',
         allDaySlot: true,
         editable: true,

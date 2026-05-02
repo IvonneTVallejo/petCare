@@ -1,11 +1,15 @@
 function showLoader() {
+    // Detect if we're in pages/ subdirectory or root
+    const isInPages = window.location.pathname.includes('/pages/');
+    const imgPath = isInPages ? '../Images/espera.png' : 'Images/espera.png';
+
     Swal.fire({
         allowOutsideClick: false,
         showConfirmButton: false,
         background: 'transparent',
         html: `
             <div class="logo-loader">
-                <img src="../Images/espera.png" alt="PetCare" class="logo-img" >
+                <img src="${imgPath}" alt="PetCare" class="logo-img" >
             </div>
         `
     });
