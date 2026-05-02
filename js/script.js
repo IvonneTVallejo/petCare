@@ -27,7 +27,7 @@ var tipoUsuario = localStorage.getItem("tipoUsuario");
 var username = localStorage.getItem("nombreVet");
 
 var usernameDisplay = document.getElementById("usernameDisplay");
-usernameDisplay.innerHTML = `<img src="/Images/sesion.png" /> Usuario: ${username}`;
+usernameDisplay.innerHTML = `<img src="../Images/sesion.png" /> Usuario: ${username}`;
 
 
 
@@ -53,5 +53,5 @@ if (tipoUsuario === "asesor") {
 function cerrarSesion() {
     localStorage.clear();
     sessionStorage.clear();
-    window.location.href = '/index.html';
+    window.location.href = '../index.html';
 }

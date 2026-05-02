@@ -67,7 +67,7 @@ $("#login").click(async function () {
 
     // ⏳ Simular carga profesional
     setTimeout(() => {
-        window.location.href = "/pages/home.html";
+        window.location.href = "pages/home.html";
     }, 1200);
 });
 

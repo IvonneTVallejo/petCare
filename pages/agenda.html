@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>PetCare System</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link href="https://unicons.iconscout.com/release/v4.0.0/css/line.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link href="../css/inventario.css" rel="stylesheet">
+    <link href="../css/agenda.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+</head>
+
+<!-- Inicio menu de navegacion lateral -->
+
+<body>
+    <nav>
+        <div class="logo-name">
+            <div class="logo-image">
+                <img src="../Images/logo.png" alt="">
+            </div>
+            <span class="logo_name">PetCare</span>
+        </div>
+        <div class="menu-items">
+            <ul class="nav-links">
+                <li>
+                    <a href="home.html" class="menu-link">
+                        <i><img src="../Images/inicio.png" class="user-icon"></i>
+                        <span class="link-name">Inicio</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="pacientes.html" class="menu-link">
+                        <i><img src="../Images/dueno-de-una-mascota.png" class="user-icon"></i>
+                        <span class="link-name">Pacientes</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="agenda.html" class="menu-link">
+                        <i><img src="../Images/agenda.png" class="user-icon"></i>
+                        <span class="link-name">Agenda</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="inventario.html" class="menu-link">
+                        <i><img src="../Images/inventario.svg" class="user-icon"></i>
+                        <span class="link-name">Inventario</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="proveedores.html" class="menu-link">
+                        <i><img src="../Images/proveedores.svg" class="user-icon"></i>
+                        <span class="link-name">Proveedores</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="compras.html" class="menu-link">
+                        <i><img src="../Images/compras.svg" class="user-icon"></i>
+                        <span class="link-name">Compras</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="ventas.html" class="menu-link">
+                        <i><img src="../Images/ventas.svg" class="user-icon"></i>
+                        <span class="link-name">Ventas</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="reportes.html" class="menu-link">
+                        <i><img src="../Images/reportes.svg" class="user-icon"></i>
+                        <span class="link-name">Reportes</span>
+                    </a>
+                </li>
+            </ul>
+            <ul class="logout-mode">
+                <li><a onclick="cerrarSesion()">
+                        <i><img src="../Images/cerrar-sesion.png" alt="Usuario" class="user-icon"></i>
+                        <span class="link-name">Logout</span>
+                    </a></li>
+            </ul>
+        </div>
+    </nav>
+    <!-- Fin menu de navegacion lateral -->
+
+    <!-- Inicio contenido principal -->
+    <section class="dashboard">
+        <div class="top">
+            <i class="uil uil-bars sidebar-toggle"></i>
+            <div id="usernameDisplay">
+                <img src="../Images/sesion.png" />
+            </div>
+        </div>
+        <div class="dash-content">
+            <div class="activity">
+                <div class="title">
+                    <img src="../Images/agenda.png" alt="Agenda" class="user-icon">
+                    <span class="text">AGENDA</span>
+                </div>
+
+                <!-- Filter Bar -->
+                <div class="agenda-filter-bar">
+                    <select class="form-control" id="filtroVeterinario">
+                        <option value="">Todos los veterinarios</option>
+                    </select>
+                    <select class="form-control" id="filtroTipoCita">
+                        <option value="">Todos los tipos</option>
+                    </select>
+                    <select class="form-control" id="filtroEstadoCita">
+                        <option value="">Todos los estados</option>
+                    </select>
+                    <button type="button" class="btn btn-secondary btn-sm" id="btnLimpiarFiltros">
+                        Limpiar
+                    </button>
+                    <div class="dropdown">
+                        <button class="btn btn-success btn-sm dropdown-toggle" type="button" id="dropdownConfig"
+                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Config
+                        </button>
+                        <div class="dropdown-menu" aria-labelledby="dropdownConfig">
+                            <a class="dropdown-item" href="#" data-toggle="modal" data-target="#modalTiposCita">Tipos de Cita</a>
+                            <a class="dropdown-item" href="#" data-toggle="modal" data-target="#modalHorarioVet">Horarios</a>
+                            <a class="dropdown-item" href="#" data-toggle="modal" data-target="#modalBloqueo">Bloqueos</a>
+                            <a class="dropdown-item" href="#" data-toggle="modal" data-target="#modalDiasNoLaborales">Días No Laborales</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Two-Panel Layout -->
+                <div class="agenda-container">
+                    <!-- LEFT: Calendar (75%) -->
+                    <div class="agenda-calendar">
+                        <div id="calendar"></div>
+                    </div>
+
+                    <!-- RIGHT: Panel Lateral (25%) -->
+                    <div class="agenda-panel">
+                        <!-- Resumen del Día -->
+                        <div class="panel-resumen-card">
+                            <div class="card-titulo">Resumen del Día</div>
+                            <div class="resumen-item">
+                                <span>Citas hoy</span>
+                                <span class="resumen-valor" id="countCitasHoy">0</span>
+                            </div>
+                            <div class="resumen-item">
+                                <span>Pendientes</span>
+                                <span class="resumen-valor" id="countPendientes">0</span>
+                            </div>
+                            <div class="proxima-cita-info" id="proximaCitaInfo">
+                                Sin citas próximas
+                            </div>
+                        </div>
+
+                        <!-- Alerta próxima cita (hidden by default, shown by JS) -->
+                        <div class="alerta-proxima" id="alertaProxima" style="display: none;">
+                            <span class="alerta-icono">⚠️</span>
+                            <span id="alertaProximaTexto">Cita en los próximos 30 minutos</span>
+                        </div>
+
+                        <!-- Botones de acción -->
+                        <button type="button" class="btn btn-nueva-cita" data-toggle="modal" data-target="#modalCita">
+                            + Nueva Cita
+                        </button>
+                        <button type="button" class="btn btn-historial" data-toggle="modal" data-target="#modalHistorialCitas">
+                            Historial
+                        </button>
+
+                        <!-- Citas del Día -->
+                        <div id="citasDelDia">
+                            <!-- Rendered dynamically by agenda.js -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================ -->
+                <!-- Modal 1: Nueva Cita / Editar Cita -->
+                <!-- ============================================ -->
+                <div class="modal fade" id="modalCita" tabindex="-1" aria-labelledby="modalCitaLabel"
+                    aria-hidden="true">
+                    <div class="modal-dialog modal-lg" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header bg-success text-white">
+                                <h5 class="modal-title" id="modalCitaLabel">Nueva Cita</h5>
+                                <button type="button" class="close text-white" data-dismiss="modal">
+                                    &times;
+                                </button>
+                            </div>
+                            <form id="formCita">
+                                <div class="modal-body">
+                                    <input type="hidden" id="ct_id_cita">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Cliente *</label>
+                                                <select class="form-control" id="ct_dc_id_cliente" required>
+                                                    <option value="">Seleccione un cliente</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Mascota *</label>
+                                                <select class="form-control" id="ct_dm_id_mascota" required disabled>
+                                                    <option value="">Seleccione primero un cliente</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Tipo de Cita *</label>
+                                                <select class="form-control" id="ct_tc_id_tipo_cita" required>
+                                                    <option value="">Seleccione</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Veterinario *</label>
+                                                <select class="form-control" id="ct_pv_documento" required>
+                                                    <option value="">Seleccione</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label>Fecha *</label>
+                                                <input type="date" class="form-control" id="ct_fecha" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label>Hora Inicio *</label>
+                                                <select class="form-control" id="ct_hora_inicio" required disabled>
+                                                    <option value="">Seleccione veterinario y fecha</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label>Hora Fin</label>
+                                                <div class="hora-fin-display" id="ct_hora_fin_display">--:--</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Notas</label>
+                                        <textarea class="form-control" id="ct_notas" rows="2"
+                                            placeholder="Notas adicionales (opcional)"></textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">
+                                        Cancelar
+                                    </button>
+                                    <button type="submit" id="btnGuardarCita" class="btn btn-success btn-sm">
+                                        Guardar
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================ -->
+                <!-- Modal 2: Detalle de Cita -->
+                <!-- ============================================ -->
+                <div class="modal fade" id="modalDetalleCita" tabindex="-1" aria-labelledby="modalDetalleCitaLabel"
+                    aria-hidden="true">
+                    <div class="modal-dialog modal-lg" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header bg-success text-white">
+                                <h5 class="modal-title" id="modalDetalleCitaLabel">Detalle de Cita</h5>
+                                <button type="button" class="close text-white" data-dismiss="modal">
+                                    &times;
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="detalle-cita-info">
+                                    <div class="detalle-row">
+                                        <span class="detalle-label">Cliente:</span>
+                                        <span class="detalle-valor" id="detalle_cliente"></span>
+                                    </div>
+                                    <div class="detalle-row">
+                                        <span class="detalle-label">Mascota:</span>
+                                        <span class="detalle-valor" id="detalle_mascota"></span>
+                                    </div>
+                                    <div class="detalle-row">
+                                        <span class="detalle-label">Tipo de Cita:</span>
+                                        <span class="detalle-valor" id="detalle_tipo"></span>
+                                    </div>
+                                    <div class="detalle-row">
+                                        <span class="detalle-label">Veterinario:</span>
+                                        <span class="detalle-valor" id="detalle_veterinario"></span>
+                                    </div>
+                                    <div class="detalle-row">
+                                        <span class="detalle-label">Fecha:</span>
+                                        <span class="detalle-valor" id="detalle_fecha"></span>
+                                    </div>
+                                    <div class="detalle-row">
+                                        <span class="detalle-label">Hora:</span>
+                                        <span class="detalle-valor" id="detalle_hora"></span>
+                                    </div>
+                                    <div class="detalle-row">
+                                        <span class="detalle-label">Estado:</span>
+                                        <span class="detalle-valor" id="detalle_estado"></span>
+                                    </div>
+                                    <div class="detalle-row">
+                                        <span class="detalle-label">Notas:</span>
+                                        <span class="detalle-valor" id="detalle_notas"></span>
+                                    </div>
+                                    <div class="detalle-row" id="detalle_consulta_row" style="display: none;">
+                                        <span class="detalle-label">Consulta Médica:</span>
+                                        <span class="detalle-valor" id="detalle_consulta"></span>
+                                    </div>
+                                </div>
+                                <!-- State change buttons (rendered dynamically) -->
+                                <div class="detalle-cita-acciones" id="detalle_acciones_estado">
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-primary btn-sm" id="btnEditarCita">
+                                    Editar
+                                </button>
+                                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">
+                                    Cerrar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================ -->
+                <!-- Modal 3: Tipos de Cita -->
+                <!-- ============================================ -->
+                <div class="modal fade" id="modalTiposCita" tabindex="-1" aria-labelledby="modalTiposCitaLabel"
+                    aria-hidden="true">
+                    <div class="modal-dialog modal-lg" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header bg-success text-white">
+                                <h5 class="modal-title" id="modalTiposCitaLabel">Gestión de Tipos de Cita</h5>
+                                <button type="button" class="close text-white" data-dismiss="modal">
+                                    &times;
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <!-- Existing types table -->
+                                <div class="tipos-cita-table mb-3">
+                                    <table class="table table-sm table-striped table-hover align-middle mb-0">
+                                        <thead class="text-center">
+                                            <tr>
+                                                <th>Nombre</th>
+                                                <th>Duración (min)</th>
+                                                <th>Precio</th>
+                                                <th>Color</th>
+                                                <th>Vet. por Defecto</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tablaTiposCita">
+                                            <tr>
+                                                <td colspan="6" class="text-center text-muted">Cargando...</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <!-- Form to add/edit type -->
+                                <hr>
+                                <h6 id="formTipoCitaTitulo">Agregar Tipo de Cita</h6>
+                                <form id="formTipoCita">
+                                    <input type="hidden" id="tc_id_tipo_cita">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label>Nombre *</label>
+                                                <input type="text" class="form-control" id="tc_nombre" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="form-group">
+                                                <label>Duración (min) *</label>
+                                                <input type="number" class="form-control" id="tc_duracion_minutos"
+                                                    min="15" max="480" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="form-group">
+                                                <label>Precio *</label>
+                                                <input type="number" class="form-control" id="tc_precio"
+                                                    step="0.01" min="0" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="form-group">
+                                                <label>Color *</label>
+                                                <div class="color-picker-container">
+                                                    <input type="color" id="tc_color" value="#007bff">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="form-group">
+                                                <label>Vet. Defecto</label>
+                                                <select class="form-control" id="tc_pv_documento">
+                                                    <option value="">Ninguno</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-success btn-sm" id="btnGuardarTipoCita">
+                                        Agregar
+                                    </button>
+                                    <button type="button" class="btn btn-secondary btn-sm" id="btnCancelarTipoCita"
+                                        style="display: none;">
+                                        Cancelar
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================ -->
+                <!-- Modal 4: Horario Veterinario -->
+                <!-- ============================================ -->
+                <div class="modal fade" id="modalHorarioVet" tabindex="-1" aria-labelledby="modalHorarioVetLabel"
+                    aria-hidden="true">
+                    <div class="modal-dialog modal-lg" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header bg-success text-white">
+                                <h5 class="modal-title" id="modalHorarioVetLabel">Configuración de Horario</h5>
+                                <button type="button" class="close text-white" data-dismiss="modal">
+                                    &times;
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="form-group">
+                                    <label>Veterinario *</label>
+                                    <select class="form-control" id="horario_veterinario_select">
+                                        <option value="">Seleccione un veterinario</option>
+                                    </select>
+                                </div>
+                                <table class="table table-sm horario-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Día</th>
+                                            <th>Activo</th>
+                                            <th>Hora Inicio</th>
+                                            <th>Hora Fin</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Lunes</td>
+                                            <td><input type="checkbox" id="hv_activo_1" data-dia="1"></td>
+                                            <td><input type="time" class="form-control" id="hv_inicio_1" data-dia="1" disabled></td>
+                                            <td><input type="time" class="form-control" id="hv_fin_1" data-dia="1" disabled></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Martes</td>
+                                            <td><input type="checkbox" id="hv_activo_2" data-dia="2"></td>
+                                            <td><input type="time" class="form-control" id="hv_inicio_2" data-dia="2" disabled></td>
+                                            <td><input type="time" class="form-control" id="hv_fin_2" data-dia="2" disabled></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Miércoles</td>
+                                            <td><input type="checkbox" id="hv_activo_3" data-dia="3"></td>
+                                            <td><input type="time" class="form-control" id="hv_inicio_3" data-dia="3" disabled></td>
+                                            <td><input type="time" class="form-control" id="hv_fin_3" data-dia="3" disabled></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Jueves</td>
+                                            <td><input type="checkbox" id="hv_activo_4" data-dia="4"></td>
+                                            <td><input type="time" class="form-control" id="hv_inicio_4" data-dia="4" disabled></td>
+                                            <td><input type="time" class="form-control" id="hv_fin_4" data-dia="4" disabled></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Viernes</td>
+                                            <td><input type="checkbox" id="hv_activo_5" data-dia="5"></td>
+                                            <td><input type="time" class="form-control" id="hv_inicio_5" data-dia="5" disabled></td>
+                                            <td><input type="time" class="form-control" id="hv_fin_5" data-dia="5" disabled></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Sábado</td>
+                                            <td><input type="checkbox" id="hv_activo_6" data-dia="6"></td>
+                                            <td><input type="time" class="form-control" id="hv_inicio_6" data-dia="6" disabled></td>
+                                            <td><input type="time" class="form-control" id="hv_fin_6" data-dia="6" disabled></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <div class="buffer-input-group">
+                                    <label>Buffer entre citas (minutos):</label>
+                                    <input type="number" id="hv_buffer_minutos" min="0" max="60" value="0">
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-success btn-sm" id="btnGuardarHorario">
+                                    Guardar Horario
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================ -->
+                <!-- Modal 5: Bloqueo de Horario -->
+                <!-- ============================================ -->
+                <div class="modal fade" id="modalBloqueo" tabindex="-1" aria-labelledby="modalBloqueoLabel"
+                    aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header bg-success text-white">
+                                <h5 class="modal-title" id="modalBloqueoLabel">Bloqueo de Horario</h5>
+                                <button type="button" class="close text-white" data-dismiss="modal">
+                                    &times;
+                                </button>
+                            </div>
+                            <form id="formBloqueo">
+                                <div class="modal-body">
+                                    <div class="form-group">
+                                        <label>Veterinario *</label>
+                                        <select class="form-control" id="bh_pv_documento" required>
+                                            <option value="">Todos los veterinarios</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Fecha *</label>
+                                        <input type="date" class="form-control" id="bh_fecha" required>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Hora Inicio *</label>
+                                                <input type="time" class="form-control" id="bh_hora_inicio" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Hora Fin *</label>
+                                                <input type="time" class="form-control" id="bh_hora_fin" required>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Motivo *</label>
+                                        <textarea class="form-control" id="bh_motivo" rows="2" required
+                                            placeholder="Motivo del bloqueo"></textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">
+                                        Cancelar
+                                    </button>
+                                    <button type="submit" class="btn btn-success btn-sm" id="btnCrearBloqueo">
+                                        Crear Bloqueo
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================ -->
+                <!-- Modal 6: Días No Laborales -->
+                <!-- ============================================ -->
+                <div class="modal fade" id="modalDiasNoLaborales" tabindex="-1" aria-labelledby="modalDiasNoLaboralesLabel"
+                    aria-hidden="true">
+                    <div class="modal-dialog modal-lg" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header bg-success text-white">
+                                <h5 class="modal-title" id="modalDiasNoLaboralesLabel">Días No Laborales</h5>
+                                <button type="button" class="close text-white" data-dismiss="modal">
+                                    &times;
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <!-- Existing days table -->
+                                <div class="dias-no-laborales-table mb-3">
+                                    <table class="table table-sm table-striped table-hover align-middle mb-0">
+                                        <thead class="text-center">
+                                            <tr>
+                                                <th>Fecha</th>
+                                                <th>Descripción</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tablaDiasNoLaborales">
+                                            <tr>
+                                                <td colspan="3" class="text-center text-muted">Cargando...</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <!-- Form to add day -->
+                                <hr>
+                                <form id="formDiaNoLaboral">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label>Fecha *</label>
+                                                <input type="date" class="form-control" id="dnl_fecha" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Descripción *</label>
+                                                <input type="text" class="form-control" id="dnl_descripcion" required
+                                                    placeholder="Ej: Festivo - Día de la Independencia">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2 d-flex align-items-end">
+                                            <button type="submit" class="btn btn-success btn-sm mb-3" id="btnAgregarDiaNoLaboral">
+                                                Agregar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================ -->
+                <!-- Modal 7: Historial de Citas -->
+                <!-- ============================================ -->
+                <div class="modal fade" id="modalHistorialCitas" tabindex="-1" aria-labelledby="modalHistorialCitasLabel"
+                    aria-hidden="true">
+                    <div class="modal-dialog modal-xl" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header bg-success text-white">
+                                <h5 class="modal-title" id="modalHistorialCitasLabel">Historial de Citas</h5>
+                                <button type="button" class="close text-white" data-dismiss="modal">
+                                    &times;
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <!-- Filters -->
+                                <div class="historial-filters">
+                                    <select class="form-control" id="historial_cliente">
+                                        <option value="">Todos los clientes</option>
+                                    </select>
+                                    <select class="form-control" id="historial_mascota">
+                                        <option value="">Todas las mascotas</option>
+                                    </select>
+                                    <input type="date" class="form-control" id="historial_fecha_inicio"
+                                        placeholder="Desde">
+                                    <input type="date" class="form-control" id="historial_fecha_fin"
+                                        placeholder="Hasta">
+                                    <select class="form-control" id="historial_estado">
+                                        <option value="">Todos los estados</option>
+                                    </select>
+                                    <button type="button" class="btn btn-success btn-sm" id="btnBuscarHistorial">
+                                        Buscar
+                                    </button>
+                                </div>
+                                <!-- Results table -->
+                                <div class="historial-table-container">
+                                    <table class="table table-sm table-striped table-hover align-middle mb-0">
+                                        <thead class="text-center">
+                                            <tr>
+                                                <th>Fecha</th>
+                                                <th>Hora</th>
+                                                <th>Tipo</th>
+                                                <th>Veterinario</th>
+                                                <th>Mascota</th>
+                                                <th>Cliente</th>
+                                                <th>Estado</th>
+                                                <th>Notas</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tablaHistorialCitas">
+                                            <tr>
+                                                <td colspan="8" class="text-center text-muted">
+                                                    Use los filtros para buscar citas
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+    <!-- Fin contenido principal -->
+
+    <!-- Import librerias JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://code.jquery.com/jquery-3.6.3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js"
+        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
+    <script src="../js/script.js"></script>
+    <script src="../js/agenda.js"></script>
+    <link rel="stylesheet" href="../css/loader.css">
+    <script src="../js/loader.js"></script>
+</body>
+
+</html>

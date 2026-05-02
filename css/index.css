@@ -147,7 +147,7 @@ body {
 /* DERECHA */
 .login-right {
   flex: 1.6; /* 👈 más grande */
-  background-image: url("/Images/fondo.jpg");
+  background-image: url("../Images/fondo.jpg");
   background-size: cover;
   background-position: center;
   position: relative;

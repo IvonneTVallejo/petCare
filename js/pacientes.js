@@ -139,7 +139,7 @@ document.getElementById("formPaciente")
 
             showLoader();
             setTimeout(() => {
-                window.location.href = "/pages/pacientes.html";
+                window.location.href = "pacientes.html";
             }, 800);
         }
     });
@@ -337,7 +337,7 @@ document.addEventListener("click", function (e) {
         showLoader();
 
         setTimeout(() => {
-            window.location.href = "/pages/mascotas.html";
+            window.location.href = "mascotas.html";
         }, 900);
     }
 });

@@ -654,18 +654,19 @@ document.getElementById("btnDescargarFormula").onclick = async () => {
     sessionStorage.setItem("datosFormula", JSON.stringify(datosPDF));
 
     // Abrimos plantilla
-    window.open("/pages/reporte_formula.html", "_blank");
+    window.open("reporte_formula.html", "_blank");
 };
 
 
 document.getElementById("btnRegresar").onclick = () => {
     const clienteId = localStorage.getItem("clienteSeleccionado");
     if (!clienteId) {
-        window.location.href = "/pages/pacientes.html";
+        window.location.href = "pacientes.html";
         return;
     }
     localStorage.setItem("tutorVolver", clienteId);
-    window.location.href = "/pages/pacientes.html";
+
+    window.location.href = "pacientes.html";
 };
 
 
