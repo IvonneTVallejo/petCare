@@ -302,9 +302,10 @@ async function cargarMascotas() {
             <td>
                 <button 
                     type="button"
-                    class="btn btn-success btn-sm btn-ver-mascota"
-                    data-id="${m.dm_id_mascota}">
-                    👁️ Ver
+                    class="btn btn-success btn-accion btn-ver-mascota"
+                    data-id="${m.dm_id_mascota}"
+                    title="Ver mascota">
+                    👁️
                 </button>
             </td>
         </tr>

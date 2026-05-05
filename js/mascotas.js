@@ -17,6 +17,10 @@ const supabaseClient = supabase.createClient(
     SUPABASE_KEY
 );
 
+document.addEventListener("DOMContentLoaded", function () {
+    generarExamenFisico();
+});
+
 document.addEventListener("DOMContentLoaded", async () => {
 
     const mascotaId = localStorage.getItem("mascotaId");
@@ -296,15 +300,17 @@ async function cargarConsultas() {
             <td>
                 <button 
                     type="button"
-                    class="btn btn-success btn-sm btn-ver-consulta"
-                    data-id="${c.cm_id_consulta}">
-                    👁️ Ver
+                    class="btn btn-success btn-accion btn-ver-consulta"
+                    data-id="${c.cm_id_consulta}"
+                    title="Ver consulta">
+                    👁️
                 </button>
                 <button 
                     type="button"
-                    class="btn btn-success btn-sm btn-formular"
-                    data-id="${c.cm_id_consulta}">
-                    📄 Formular
+                    class="btn btn-info btn-accion btn-formular"
+                    data-id="${c.cm_id_consulta}"
+                    title="Formular">
+                    📄
                 </button>
             </td>
         </tr>
