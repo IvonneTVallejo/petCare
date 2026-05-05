@@ -17,29 +17,26 @@ let veterinariosCache = [];
 let clientesCache = [];
 
 // Transiciones de estado permitidas
-// 1=Programada, 2=Confirmada, 3=Cancelada, 4=Generar Consulta, 5=Finalizada, 6=No asistió
+// 1=Programada, 2=Cancelada, 3=Generar Consulta, 4=Finalizada, 5=No asistió
 const TRANSICIONES_ESTADO = {
-    1: [2, 3],       // Programada → Confirmada, Cancelada
-    2: [4, 3, 6],    // Confirmada → Generar Consulta, Cancelada, No asistió
-    4: [5]            // Generar Consulta → Finalizada
+    1: [2, 3, 5],    // Programada → Cancelada, Generar Consulta, No asistió
+    3: [4]            // Generar Consulta → Finalizada
 };
 
 const COLORES_ESTADO = {
     1: '#007bff',  // Programada - Azul
-    2: '#28a745',  // Confirmada - Verde
-    3: '#dc3545',  // Cancelada - Rojo
-    4: '#ffc107',  // Generar Consulta - Amarillo
-    5: '#6c757d',  // Finalizada - Gris
-    6: '#fd7e14'   // No asistió - Naranja
+    2: '#dc3545',  // Cancelada - Rojo
+    3: '#ffc107',  // Generar Consulta - Amarillo
+    4: '#6c757d',  // Finalizada - Gris
+    5: '#fd7e14'   // No asistió - Naranja
 };
 
 const NOMBRES_ESTADO = {
     1: 'Programada',
-    2: 'Confirmada',
-    3: 'Cancelada',
-    4: 'Generar Consulta',
-    5: 'Finalizada',
-    6: 'No asistió'
+    2: 'Cancelada',
+    3: 'Generar Consulta',
+    4: 'Finalizada',
+    5: 'No asistió'
 };
 
 // ================= INITIALIZATION =================
@@ -456,8 +453,8 @@ async function onEventDrop(info) {
 
     const estadoActual = props.ct_eci_id_estado_cita;
 
-    // Only allow reprogramming for Programada (1) or Confirmada (2)
-    if (estadoActual !== 1 && estadoActual !== 2) {
+    // Only allow reprogramming for Programada (1)
+    if (estadoActual !== 1) {
         await Swal.fire({
             title: 'No se puede reprogramar',
             text: 'Solo se pueden reprogramar citas en estado Programada o Confirmada.',
@@ -779,7 +776,7 @@ async function cambiarEstadoCita(citaId, nuevoEstado) {
     }
 
     // If cancelling, confirm
-    if (nuevoEstado === 3) {
+    if (nuevoEstado === 2) {
         const result = await Swal.fire({
             title: "¿Cancelar esta cita?",
             text: "Se liberará el horario para nuevas reservas.",
@@ -810,9 +807,9 @@ async function cambiarEstadoCita(citaId, nuevoEstado) {
         showConfirmButton: false
     });
 
-    // If Finalizada, offer to create consulta médica
-    if (nuevoEstado === 5) {
-        await ofrecerCrearConsulta(citaId);
+    // If Generar Consulta, open the consultation modal
+    if (nuevoEstado === 3) {
+        await abrirModalConsultaDesdeCita(citaId);
     }
 
     calendarInstance.refetchEvents();
@@ -873,7 +870,7 @@ async function calcularSlotsDisponibles(vetDoc, fecha, duracionMin) {
         .select("ct_hora_inicio, ct_hora_fin")
         .eq("ct_pv_documento", vetDoc)
         .eq("ct_fecha", fecha)
-        .in("ct_eci_id_estado_cita", [1, 2]);
+        .in("ct_eci_id_estado_cita", [1, 3]);
 
     // 5. Get bloqueos for vet+date (include null vet = all)
     const { data: bloqueosData } = await supabaseClient
@@ -960,7 +957,7 @@ async function verificarDisponibilidad(vetDoc, fecha, horaInicio, horaFin, exclu
         .select("ct_id_cita")
         .eq("ct_pv_documento", vetDoc)
         .eq("ct_fecha", fecha)
-        .in("ct_eci_id_estado_cita", [1, 2])
+        .in("ct_eci_id_estado_cita", [1, 3])
         .lt("ct_hora_inicio", horaFin)
         .gt("ct_hora_fin", horaInicio);
 
@@ -1067,7 +1064,7 @@ async function actualizarResumenDia() {
     const horaActual = `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
 
     const proximaCita = citas.find(c =>
-        (c.ct_eci_id_estado_cita === 1 || c.ct_eci_id_estado_cita === 2) &&
+        (c.ct_eci_id_estado_cita === 1 || c.ct_eci_id_estado_cita === 3) &&
         c.ct_hora_inicio.substring(0, 5) > horaActual
     );
 
@@ -1098,7 +1095,7 @@ function verificarAlertaProxima(citas, horaActual) {
     const en30Min = ahoraMin + 30;
 
     const citaProxima = citas.find(c =>
-        c.ct_eci_id_estado_cita === 2 && // Confirmada
+        c.ct_eci_id_estado_cita === 1 && // Programada
         horaAMinutos(c.ct_hora_inicio.substring(0, 5)) >= ahoraMin &&
         horaAMinutos(c.ct_hora_inicio.substring(0, 5)) <= en30Min
     );
@@ -1137,7 +1134,7 @@ function renderizarCitasDelDia(citas) {
         const transiciones = TRANSICIONES_ESTADO[cita.ct_eci_id_estado_cita] || [];
         let botonesHTML = '';
         transiciones.forEach(nuevoEstado => {
-            const btnColor = nuevoEstado === 3 ? 'btn-danger' : nuevoEstado === 6 ? 'btn-warning' : 'btn-success';
+            const btnColor = nuevoEstado === 2 ? 'btn-danger' : nuevoEstado === 5 ? 'btn-warning' : 'btn-success';
             botonesHTML += `<button class="btn ${btnColor} btn-sm btn-cambiar-estado" data-cita-id="${cita.ct_id_cita}" data-nuevo-estado="${nuevoEstado}">${NOMBRES_ESTADO[nuevoEstado]}</button>`;
         });
 
@@ -1230,7 +1227,7 @@ async function mostrarDetalleCita(citaId) {
 
     transiciones.forEach(nuevoEstado => {
         const btn = document.createElement("button");
-        const btnClass = nuevoEstado === 3 ? 'btn-danger' : nuevoEstado === 6 ? 'btn-warning' : 'btn-success';
+        const btnClass = nuevoEstado === 2 ? 'btn-danger' : nuevoEstado === 5 ? 'btn-warning' : 'btn-success';
         btn.className = `btn ${btnClass} btn-sm`;
         btn.textContent = NOMBRES_ESTADO[nuevoEstado];
         btn.addEventListener("click", () => cambiarEstadoCita(cita.ct_id_cita, nuevoEstado));
@@ -1535,7 +1532,7 @@ async function crearBloqueo(e) {
         .from("citas")
         .select("ct_id_cita, ct_hora_inicio, ct_hora_fin, datos_cliente(dc_nombre)")
         .eq("ct_fecha", fecha)
-        .in("ct_eci_id_estado_cita", [1, 2])
+        .in("ct_eci_id_estado_cita", [1, 3])
         .lt("ct_hora_inicio", horaFin)
         .gt("ct_hora_fin", horaInicio);
 
@@ -1812,20 +1809,42 @@ function renderizarTablaHistorial(citas) {
 }
 
 async function ofrecerCrearConsulta(citaId) {
-    const result = await Swal.fire({
-        title: "Cita Finalizada",
-        text: "¿Desea crear una consulta médica asociada a esta cita?",
-        icon: "question",
-        showCancelButton: true,
-        confirmButtonColor: "#28a745",
-        cancelButtonColor: "#6c757d",
-        confirmButtonText: "Sí, crear consulta",
-        cancelButtonText: "No, solo finalizar"
-    });
+    // Ya no se usa - reemplazada por abrirModalConsultaDesdeCita
+}
 
-    if (result.isConfirmed) {
-        await crearConsultaDesdeCita(citaId);
+async function abrirModalConsultaDesdeCita(citaId) {
+    // Fetch cita data to pre-fill the consultation modal
+    const { data: cita, error: errCita } = await supabaseClient
+        .from("citas")
+        .select(`
+            *,
+            tipo_cita ( tc_nombre ),
+            datos_cliente ( dc_id_cliente, dc_nombre ),
+            datos_mascota ( dm_id_mascota, dm_nombre )
+        `)
+        .eq("ct_id_cita", citaId)
+        .single();
+
+    if (errCita || !cita) {
+        await Swal.fire({ title: "Error", text: "No se pudo obtener los datos de la cita.", icon: "error" });
+        return;
     }
+
+    // Pre-fill hidden fields
+    document.getElementById("agenda_dc_id_cliente").value = cita.ct_dc_id_cliente;
+    document.getElementById("agenda_dm_id_mascota").value = cita.ct_dm_id_mascota;
+    document.getElementById("ct_id_cita_consulta").value = citaId;
+
+    // Pre-fill motivo with tipo de cita
+    document.getElementById("agenda_cm_motivo_consulta").value = cita.tipo_cita ? cita.tipo_cita.tc_nombre : '';
+
+    // Close detail modal if open
+    $('#modalDetalleCita').modal('hide');
+
+    // Open consultation modal
+    setTimeout(() => {
+        $('#modalRegistroConsulta').modal('show');
+    }, 300);
 }
 
 async function crearConsultaDesdeCita(citaId) {
@@ -2090,6 +2109,9 @@ function inicializarEventListeners() {
     // --- Días No Laborales ---
     document.getElementById("formDiaNoLaboral").addEventListener("submit", registrarDiaNoLaboral);
 
+    // --- Consulta desde Agenda ---
+    document.getElementById("formConsultaAgenda").addEventListener("submit", guardarConsultaDesdeAgenda);
+
     // --- Historial ---
     document.getElementById("btnBuscarHistorial").addEventListener("click", buscarHistorialCitas);
 
@@ -2135,4 +2157,83 @@ function inicializarEventListeners() {
         // Remove is-invalid classes
         document.querySelectorAll('#formCita .is-invalid').forEach(el => el.classList.remove('is-invalid'));
     });
+}
+
+
+// ================= GUARDAR CONSULTA DESDE AGENDA =================
+
+async function guardarConsultaDesdeAgenda(e) {
+    e.preventDefault();
+
+    const clienteId = document.getElementById("agenda_dc_id_cliente").value;
+    const mascotaId = document.getElementById("agenda_dm_id_mascota").value;
+    const citaId = document.getElementById("ct_id_cita_consulta").value;
+    const motivo = document.getElementById("agenda_cm_motivo_consulta").value.trim();
+    const peso = document.getElementById("agenda_ef_peso_mascota").value;
+
+    if (!motivo || !peso) {
+        await Swal.fire({
+            title: "Campos incompletos",
+            text: "Por favor complete el motivo de consulta y el peso.",
+            icon: "warning"
+        });
+        return;
+    }
+
+    // 1. Create consulta_medica
+    const consultaData = {
+        cm_dc_id_cliente: parseInt(clienteId),
+        cm_dm_id_mascota: parseInt(mascotaId),
+        cm_fecha_consulta: new Date().toISOString().split('T')[0],
+        cm_motivo_consulta: motivo,
+        cm_diagnosticos_diferenciales: document.getElementById("agenda_cm_diagnosticos_diferenciales").value.trim() || null,
+        cm_diagnostico_definitivo: document.getElementById("agenda_cm_diagnostico_definitivo").value.trim() || null,
+        cm_medicamentos_aplicados: document.getElementById("agenda_cm_medicamentos_aplicados").value.trim() || null,
+        cm_observaciones: document.getElementById("agenda_cm_observaciones").value.trim() || null,
+        cm_presupuesto: document.getElementById("agenda_cm_presupuesto").value || null,
+        cm_ec_id_estado: 1 // Abierta
+    };
+
+    const { data: consulta, error: errConsulta } = await supabaseClient
+        .from("consulta_medica")
+        .insert(consultaData)
+        .select()
+        .single();
+
+    if (errConsulta) {
+        await Swal.fire({ title: "Error", text: errConsulta.message, icon: "error" });
+        return;
+    }
+
+    // 2. Create examen_fisico
+    const examenData = {
+        ef_peso_mascota: parseInt(peso),
+        ef_cm_id_consulta: consulta.cm_id_consulta
+    };
+
+    await supabaseClient.from("examen_fisico").insert(examenData);
+
+    // 3. Link consulta to cita
+    if (citaId) {
+        await supabaseClient
+            .from("citas")
+            .update({ ct_cm_id_consulta: consulta.cm_id_consulta })
+            .eq("ct_id_cita", parseInt(citaId));
+    }
+
+    await Swal.fire({
+        title: "Consulta registrada",
+        text: `Consulta #${consulta.cm_id_consulta} creada y vinculada a la cita.`,
+        icon: "success",
+        timer: 2500,
+        showConfirmButton: false
+    });
+
+    // Close modal and reset form
+    $('#modalRegistroConsulta').modal('hide');
+    document.getElementById("formConsultaAgenda").reset();
+
+    // Refresh calendar
+    calendarInstance.refetchEvents();
+    actualizarResumenDia();
 }
