@@ -68,6 +68,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 document.getElementById("btnGenerarConsulta").onclick = () => {
     document.getElementById("dm_dc_id_cliente").value = mascota.dm_dc_id_cliente;
     document.getElementById("dm_id_mascota").value = mascota.dm_id_mascota;
+    limpiarCamposConsulta();
     $('#modalRegistroConsulta').modal('show');
 };
 
@@ -92,7 +93,7 @@ document.getElementById("formConsulta")
                 cm_motivo_consulta: document.getElementById("cm_motivo_consulta").value,
                 cm_diagnosticos_diferenciales: document.getElementById("cm_diagnosticos_diferenciales").value,
                 cm_diagnostico_definitivo: document.getElementById("cm_diagnostico_definitivo").value,
-                cm_medicamentos_aplicados: document.getElementById("cm_medicamentos_aplicados").value,
+                cm_medicamentos_aplicados: serializarMedicamentosConsultaLocal(medicamentosSeleccionados),
                 cm_observaciones: document.getElementById("cm_observaciones").value,
                 cm_presupuesto: document.getElementById("cm_presupuesto").value,
                 cm_ec_id_estado: 1
@@ -111,6 +112,11 @@ document.getElementById("formConsulta")
             await guardarExamenFisico(idConsulta);
             await guardarEctoparasitos(idConsulta);
             await guardarPlanDiagnostico(idConsulta);
+
+            // Task 6.4: Descontar inventario después de guardar consulta
+            if (medicamentosSeleccionados.length > 0) {
+                await descontarInventarioConsulta(idConsulta, medicamentosSeleccionados);
+            }
 
             await Swal.fire({
                 title: "Consulta registrada",
@@ -497,7 +503,9 @@ document.addEventListener("click", async function (e) {
 
             cm_diagnosticos_diferenciales.value = consulta.cm_diagnosticos_diferenciales || "";
             cm_diagnostico_definitivo.value = consulta.cm_diagnostico_definitivo || "";
-            cm_medicamentos_aplicados.value = consulta.cm_medicamentos_aplicados || "";
+
+            // Task 8.1: Mostrar medicamentos en modo lectura
+            renderMedicamentosReadOnly(consulta.cm_medicamentos_aplicados);
 
             cm_presupuesto.value = consulta.cm_presupuesto || "";
 
@@ -574,7 +582,7 @@ document.addEventListener("click", async function (e) {
 
             document.getElementById("btnGuardarConsulta").style.display = "none";
             document.getElementById("btnLimpiarCampos").style.display = "none";
-            document.getElementById("btnFinalizarConsulta").style.display = "inline-block";
+            document.getElementById("btnVerSeguimientos").style.display = "inline-block";
 
             bloquearFormularioConsulta();
 
@@ -685,4 +693,478 @@ $('#modalRegistroConsulta').on('show.bs.modal', function () {
     document.getElementById("btnFinalizarConsulta").style.display = "none";
 
     desbloquearFormularioConsulta();
+    restaurarMedicamentosEdicion();
+    cargarMedicamentosInventario();
 });
+
+$('#modalRegistroConsulta').on('hidden.bs.modal', function () {
+    medicamentosSeleccionados = [];
+    medicamentosCache = [];
+    renderListaSeleccionados();
+    const inputBuscar = document.getElementById("buscarMedicamento");
+    if (inputBuscar) inputBuscar.value = "";
+    const resultados = document.getElementById("resultadosMedicamentos");
+    if (resultados) resultados.style.display = "none";
+});
+
+// ================= CARRITO MEDICAMENTOS =================
+
+let medicamentosCache = [];
+let medicamentosSeleccionados = [];
+
+/**
+ * Carga medicamentos del inventario (categoría 1) desde Supabase.
+ * Task 5.1
+ */
+async function cargarMedicamentosInventario() {
+    try {
+        const { data, error } = await supabaseClient
+            .from("productos")
+            .select("pr_id_producto, pr_nombre, pr_lote, pr_cantidad_disponible, pr_stock_minimo, pr_costo_compra")
+            .eq("pr_cat_id_categoria", 1);
+
+        if (error) throw new Error(error.message);
+
+        medicamentosCache = data || [];
+    } catch (err) {
+        medicamentosCache = [];
+        Swal.fire("Error", "No se pudieron cargar los medicamentos del inventario: " + err.message, "error");
+        const inputBuscar = document.getElementById("buscarMedicamento");
+        if (inputBuscar) inputBuscar.disabled = true;
+    }
+}
+
+/**
+ * Filtra medicamentos por nombre (mínimo 2 caracteres, case-insensitive).
+ */
+function buscarMedicamentoPorNombreLocal(medicamentos, termino) {
+    if (!Array.isArray(medicamentos)) return [];
+    if (!termino || typeof termino !== 'string') return [];
+    const terminoTrimmed = termino.trim();
+    if (terminoTrimmed.length < 2) return [];
+    const terminoLower = terminoTrimmed.toLowerCase();
+    return medicamentos.filter(m => {
+        if (!m || !m.pr_nombre || typeof m.pr_nombre !== 'string') return false;
+        return m.pr_nombre.toLowerCase().includes(terminoLower);
+    });
+}
+
+/**
+ * Agrega un medicamento al carrito o incrementa cantidad si ya existe.
+ */
+function agregarAlCarritoLocal(carrito, producto) {
+    if (!Array.isArray(carrito)) return [];
+    if (!producto || typeof producto !== 'object') return [...carrito];
+    const productoId = producto.pr_id_producto;
+    if (productoId == null) return [...carrito];
+    const existente = carrito.find(item => item.productoId === productoId);
+    if (existente) {
+        return carrito.map(item =>
+            item.productoId === productoId
+                ? { ...item, cantidad: item.cantidad + 1 }
+                : { ...item }
+        );
+    }
+    return [
+        ...carrito,
+        {
+            productoId: productoId,
+            nombre: producto.pr_nombre || '',
+            lote: producto.pr_lote || '',
+            cantidad: 1,
+            stockDisponible: producto.pr_cantidad_disponible || 0,
+            costoUnitario: producto.pr_costo_compra || 0
+        }
+    ];
+}
+
+/**
+ * Valida cantidad en rango [1, stockDisponible].
+ */
+function validarCantidadMedicamentoLocal(cantidad, stockDisponible) {
+    if (typeof stockDisponible !== 'number' || !isFinite(stockDisponible) || stockDisponible <= 0) {
+        return { valido: false, cantidadFinal: 0, error: "Stock no disponible" };
+    }
+    if (typeof cantidad !== 'number' || !isFinite(cantidad)) {
+        return { valido: false, cantidadFinal: 1, error: "La cantidad debe ser un número válido" };
+    }
+    if (cantidad < 1) {
+        return { valido: false, cantidadFinal: 1, error: "La cantidad debe ser mayor a 0" };
+    }
+    if (cantidad > stockDisponible) {
+        return { valido: false, cantidadFinal: stockDisponible, error: `Stock máximo disponible: ${stockDisponible}` };
+    }
+    return { valido: true, cantidadFinal: cantidad, error: null };
+}
+
+/**
+ * Elimina un item del carrito por productoId.
+ */
+function eliminarDelCarritoLocal(carrito, productoId) {
+    if (!Array.isArray(carrito)) return [];
+    if (productoId == null) return [...carrito];
+    return carrito.filter(item => item.productoId !== productoId);
+}
+
+/**
+ * Serializa la lista de medicamentos seleccionados a JSON.
+ */
+function serializarMedicamentosConsultaLocal(items) {
+    if (!Array.isArray(items) || items.length === 0) return "[]";
+    const mapped = items.map(item => ({
+        nombre: item.nombre || '',
+        lote: item.lote || '',
+        cantidad: item.cantidad || 0
+    }));
+    return JSON.stringify(mapped);
+}
+
+/**
+ * Deserializa texto de medicamentos (JSON o legacy).
+ */
+function deserializarMedicamentosConsultaLocal(texto) {
+    if (texto == null || texto === '') return [];
+    if (typeof texto !== 'string') return [];
+    const trimmed = texto.trim();
+    if (trimmed === '') return [];
+    try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+            return parsed.map(item => ({
+                nombre: item.nombre || '',
+                lote: item.lote || '',
+                cantidad: item.cantidad || 0
+            }));
+        }
+        return [{ texto: trimmed }];
+    } catch (e) {
+        return [{ texto: trimmed }];
+    }
+}
+
+/**
+ * Construye objeto de movimiento de inventario para descuento por consulta.
+ */
+function construirMovimientoConsultaLocal(productoId, cantidad, costoUnitario, saldoResultante, idConsulta) {
+    return {
+        mi_pr_id_producto: productoId,
+        mi_tmi_id_tipo: 4,
+        mi_cantidad: cantidad,
+        mi_costo_unitario: costoUnitario,
+        mi_saldo_resultante: saldoResultante,
+        mi_notas: "Consulta médica #" + idConsulta
+    };
+}
+
+// ===== Task 5.2: Búsqueda y renderizado de resultados =====
+
+document.addEventListener("DOMContentLoaded", function () {
+    const inputBuscar = document.getElementById("buscarMedicamento");
+    if (inputBuscar) {
+        inputBuscar.addEventListener("input", function () {
+            const termino = this.value;
+            const resultados = buscarMedicamentoPorNombreLocal(medicamentosCache, termino);
+            renderResultadosBusqueda(resultados);
+        });
+
+        // Cerrar dropdown al hacer click fuera
+        document.addEventListener("click", function (e) {
+            if (!e.target.closest("#busquedaMedicamentoWrapper")) {
+                const dropdown = document.getElementById("resultadosMedicamentos");
+                if (dropdown) dropdown.style.display = "none";
+            }
+        });
+    }
+});
+
+function renderResultadosBusqueda(resultados) {
+    const container = document.getElementById("resultadosMedicamentos");
+    if (!container) return;
+
+    if (!resultados || resultados.length === 0) {
+        container.style.display = "none";
+        container.innerHTML = "";
+        return;
+    }
+
+    let html = "";
+    resultados.forEach(med => {
+        const sinStock = med.pr_cantidad_disponible <= 0;
+        const disabledClass = sinStock ? "disabled" : "";
+        const badgeSinStock = sinStock ? '<span class="badge-sin-stock">Sin stock</span>' : "";
+        const stockInfo = sinStock ? "" : ` (Stock: ${med.pr_cantidad_disponible})`;
+
+        html += `<div class="resultado-item ${disabledClass}" data-id="${med.pr_id_producto}">
+            <strong>${med.pr_nombre}</strong>${badgeSinStock}<br>
+            <small>Lote: ${med.pr_lote || 'N/A'}${stockInfo}</small>
+        </div>`;
+    });
+
+    container.innerHTML = html;
+    container.style.display = "block";
+
+    // Event listeners para seleccionar
+    container.querySelectorAll(".resultado-item:not(.disabled)").forEach(item => {
+        item.addEventListener("click", function () {
+            const productoId = parseInt(this.dataset.id);
+            agregarMedicamentoAlCarrito(productoId);
+            container.style.display = "none";
+            document.getElementById("buscarMedicamento").value = "";
+        });
+    });
+}
+
+// ===== Task 5.3: Selección y gestión del carrito =====
+
+function agregarMedicamentoAlCarrito(productoId) {
+    const producto = medicamentosCache.find(m => m.pr_id_producto === productoId);
+    if (!producto) return;
+
+    // Verificar stock antes de agregar
+    const itemExistente = medicamentosSeleccionados.find(i => i.productoId === productoId);
+    if (itemExistente) {
+        const validacion = validarCantidadMedicamentoLocal(itemExistente.cantidad + 1, producto.pr_cantidad_disponible);
+        if (!validacion.valido) {
+            Swal.fire("Atención", validacion.error, "warning");
+            return;
+        }
+    }
+
+    medicamentosSeleccionados = agregarAlCarritoLocal(medicamentosSeleccionados, producto);
+    renderListaSeleccionados();
+}
+
+function renderListaSeleccionados() {
+    const container = document.getElementById("listaMedicamentosSeleccionados");
+    if (!container) return;
+
+    if (medicamentosSeleccionados.length === 0) {
+        container.innerHTML = "";
+        return;
+    }
+
+    let html = "";
+    medicamentosSeleccionados.forEach(item => {
+        html += `<div class="med-item" data-id="${item.productoId}">
+            <span class="med-nombre" title="${item.nombre} (Lote: ${item.lote})">${item.nombre}</span>
+            <input type="number" class="med-cantidad" value="${item.cantidad}" min="1" max="${item.stockDisponible}" data-id="${item.productoId}">
+            <button type="button" class="btn-eliminar-med" data-id="${item.productoId}" title="Eliminar">&times;</button>
+        </div>`;
+    });
+
+    container.innerHTML = html;
+
+    // Event listeners para cantidad
+    container.querySelectorAll(".med-cantidad").forEach(input => {
+        input.addEventListener("change", function () {
+            const productoId = parseInt(this.dataset.id);
+            const nuevaCantidad = parseInt(this.value);
+            const item = medicamentosSeleccionados.find(i => i.productoId === productoId);
+            if (!item) return;
+
+            const validacion = validarCantidadMedicamentoLocal(nuevaCantidad, item.stockDisponible);
+            if (!validacion.valido) {
+                Swal.fire("Atención", validacion.error, "warning");
+            }
+            // Actualizar con la cantidad final (ajustada si excede)
+            medicamentosSeleccionados = medicamentosSeleccionados.map(i =>
+                i.productoId === productoId ? { ...i, cantidad: validacion.cantidadFinal } : i
+            );
+            renderListaSeleccionados();
+        });
+    });
+
+    // Event listeners para eliminar
+    container.querySelectorAll(".btn-eliminar-med").forEach(btn => {
+        btn.addEventListener("click", function () {
+            const productoId = parseInt(this.dataset.id);
+            medicamentosSeleccionados = eliminarDelCarritoLocal(medicamentosSeleccionados, productoId);
+            renderListaSeleccionados();
+        });
+    });
+}
+
+
+// ================= VISUALIZACIÓN MEDICAMENTOS READ-ONLY (Task 8.1) =================
+
+/**
+ * Renderiza medicamentos en modo solo lectura para "Ver Consulta".
+ */
+function renderMedicamentosReadOnly(textoMedicamentos) {
+    const wrapper = document.getElementById("busquedaMedicamentoWrapper");
+    const listaContainer = document.getElementById("listaMedicamentosSeleccionados");
+
+    // Ocultar campo de búsqueda en modo visualización
+    if (wrapper) wrapper.style.display = "none";
+
+    if (!listaContainer) return;
+
+    const items = deserializarMedicamentosConsultaLocal(textoMedicamentos);
+
+    if (!items || items.length === 0) {
+        listaContainer.innerHTML = '<small class="text-muted">Sin medicamentos registrados</small>';
+        return;
+    }
+
+    // Verificar si es texto legacy
+    if (items.length === 1 && items[0].texto) {
+        listaContainer.innerHTML = `<p style="font-size:12px; white-space:pre-wrap;">${items[0].texto}</p>`;
+        return;
+    }
+
+    let html = '<div class="lista-medicamentos-readonly">';
+    items.forEach(item => {
+        html += `<div class="med-item">
+            <span class="med-nombre" title="Lote: ${item.lote}">${item.nombre} <small>(${item.lote})</small></span>
+            <input type="text" class="med-cantidad" value="${item.cantidad}" readonly disabled>
+        </div>`;
+    });
+    html += '</div>';
+
+    listaContainer.innerHTML = html;
+}
+
+/**
+ * Restaura el componente de medicamentos a modo edición.
+ */
+function restaurarMedicamentosEdicion() {
+    const wrapper = document.getElementById("busquedaMedicamentoWrapper");
+    if (wrapper) wrapper.style.display = "block";
+
+    const inputBuscar = document.getElementById("buscarMedicamento");
+    if (inputBuscar) inputBuscar.disabled = false;
+
+    medicamentosSeleccionados = [];
+    renderListaSeleccionados();
+}
+
+// ================= DESCUENTO INVENTARIO (Tasks 6.1, 6.2, 6.3) =================
+
+/**
+ * Descuenta inventario para cada medicamento de la consulta.
+ * Si falla un item, revierte los anteriores (rollback).
+ * Task 6.1, 6.2
+ */
+async function descontarInventarioConsulta(idConsulta, items) {
+    const descuentosRealizados = [];
+
+    try {
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+
+            // Verificar stock actual
+            const { data: producto, error: errorProducto } = await supabaseClient
+                .from("productos")
+                .select("pr_id_producto, pr_cantidad_disponible, pr_costo_compra, pr_stock_minimo, pr_nombre")
+                .eq("pr_id_producto", item.productoId)
+                .single();
+
+            if (errorProducto) {
+                throw new Error(`Error al verificar stock de "${item.nombre}": ${errorProducto.message}`);
+            }
+
+            if (producto.pr_cantidad_disponible < item.cantidad) {
+                throw new Error(`Stock insuficiente para "${item.nombre}". Disponible: ${producto.pr_cantidad_disponible}, Solicitado: ${item.cantidad}`);
+            }
+
+            // Calcular nuevo stock
+            const nuevoStock = producto.pr_cantidad_disponible - item.cantidad;
+
+            // Construir movimiento de kardex
+            const movimiento = construirMovimientoConsultaLocal(
+                item.productoId,
+                item.cantidad,
+                producto.pr_costo_compra || item.costoUnitario,
+                nuevoStock,
+                idConsulta
+            );
+
+            // Insertar movimiento de kardex
+            const { error: errorMovimiento } = await supabaseClient
+                .from("movimientos_inventario")
+                .insert(movimiento);
+
+            if (errorMovimiento) {
+                throw new Error(`Error al registrar movimiento para "${item.nombre}": ${errorMovimiento.message}`);
+            }
+
+            // Actualizar stock del producto
+            const { error: errorUpdate } = await supabaseClient
+                .from("productos")
+                .update({ pr_cantidad_disponible: nuevoStock })
+                .eq("pr_id_producto", item.productoId);
+
+            if (errorUpdate) {
+                throw new Error(`Error al actualizar stock de "${item.nombre}": ${errorUpdate.message}`);
+            }
+
+            descuentosRealizados.push({
+                productoId: item.productoId,
+                nombre: item.nombre,
+                cantidad: item.cantidad,
+                stockAnterior: producto.pr_cantidad_disponible,
+                nuevoStock: nuevoStock,
+                stockMinimo: producto.pr_stock_minimo
+            });
+        }
+
+        // Task 6.3: Verificar stock bajo después de descontar
+        const medicamentosStockBajo = descuentosRealizados.filter(d =>
+            d.nuevoStock <= (d.stockMinimo || 0)
+        );
+
+        if (medicamentosStockBajo.length > 0) {
+            const listaBajo = medicamentosStockBajo.map(m =>
+                `• ${m.nombre} (Stock: ${m.nuevoStock})`
+            ).join("<br>");
+
+            Swal.fire({
+                title: "⚠️ Stock bajo",
+                html: `Los siguientes medicamentos quedaron con stock bajo:<br><br>${listaBajo}`,
+                icon: "warning",
+                confirmButtonText: "Entendido"
+            });
+        }
+
+    } catch (err) {
+        // Task 6.2: Rollback - revertir descuentos realizados
+        if (descuentosRealizados.length > 0) {
+            await rollbackDescuentos(descuentosRealizados, idConsulta);
+        }
+
+        Swal.fire("Error de inventario", err.message, "error");
+    }
+}
+
+/**
+ * Revierte descuentos realizados con ajuste positivo (mi_tmi_id_tipo = 3).
+ * Task 6.2
+ */
+async function rollbackDescuentos(descuentosRealizados, idConsulta) {
+    for (const descuento of descuentosRealizados) {
+        try {
+            // Insertar movimiento de ajuste positivo para revertir
+            const movimientoReverso = {
+                mi_pr_id_producto: descuento.productoId,
+                mi_tmi_id_tipo: 3, // ajuste_positivo
+                mi_cantidad: descuento.cantidad,
+                mi_costo_unitario: 0,
+                mi_saldo_resultante: descuento.stockAnterior,
+                mi_notas: "Reverso - Consulta médica #" + idConsulta
+            };
+
+            await supabaseClient
+                .from("movimientos_inventario")
+                .insert(movimientoReverso);
+
+            // Restaurar stock anterior
+            await supabaseClient
+                .from("productos")
+                .update({ pr_cantidad_disponible: descuento.stockAnterior })
+                .eq("pr_id_producto", descuento.productoId);
+
+        } catch (rollbackErr) {
+            console.error("Error en rollback para producto " + descuento.nombre, rollbackErr);
+        }
+    }
+}

@@ -183,6 +183,190 @@ export function clasificarVencimiento(producto, hoy) {
     return 'vigente';
 }
 
+// ================= CARRITO MEDICAMENTOS CONSULTA =================
+
+/**
+ * Filtra medicamentos por término de búsqueda en el nombre.
+ * @param {Array} medicamentos - Lista de productos medicamento.
+ * @param {string} termino - Texto de búsqueda (mínimo 2 caracteres).
+ * @returns {Array} Medicamentos cuyo nombre contiene el término.
+ *
+ * Validates: Requirements 1.2, 1.3
+ */
+export function buscarMedicamentoPorNombre(medicamentos, termino) {
+    if (!Array.isArray(medicamentos)) return [];
+    if (!termino || typeof termino !== 'string') return [];
+
+    const terminoTrimmed = termino.trim();
+    if (terminoTrimmed.length < 2) return [];
+
+    const terminoLower = terminoTrimmed.toLowerCase();
+
+    return medicamentos.filter(m => {
+        if (!m || !m.pr_nombre || typeof m.pr_nombre !== 'string') return false;
+        return m.pr_nombre.toLowerCase().includes(terminoLower);
+    });
+}
+
+/**
+ * Agrega un medicamento al carrito o incrementa su cantidad si ya existe.
+ * @param {Array} carrito - Lista actual [{productoId, nombre, lote, cantidad, stockDisponible, costoUnitario}].
+ * @param {Object} producto - Producto a agregar (con campos pr_id_producto, pr_nombre, pr_lote, pr_cantidad_disponible, pr_costo_compra).
+ * @returns {Array} Nuevo estado del carrito.
+ *
+ * Validates: Requirements 2.1, 2.6
+ */
+export function agregarAlCarrito(carrito, producto) {
+    if (!Array.isArray(carrito)) return [];
+    if (!producto || typeof producto !== 'object') return [...carrito];
+
+    const productoId = producto.pr_id_producto;
+    if (productoId == null) return [...carrito];
+
+    const existente = carrito.find(item => item.productoId === productoId);
+
+    if (existente) {
+        return carrito.map(item =>
+            item.productoId === productoId
+                ? { ...item, cantidad: item.cantidad + 1 }
+                : { ...item }
+        );
+    }
+
+    return [
+        ...carrito,
+        {
+            productoId: productoId,
+            nombre: producto.pr_nombre || '',
+            lote: producto.pr_lote || '',
+            cantidad: 1,
+            stockDisponible: producto.pr_cantidad_disponible || 0,
+            costoUnitario: producto.pr_costo_compra || 0
+        }
+    ];
+}
+
+/**
+ * Valida y ajusta la cantidad de un item en el carrito.
+ * @param {number} cantidad - Cantidad deseada.
+ * @param {number} stockDisponible - Stock máximo disponible.
+ * @returns {{ valido: boolean, cantidadFinal: number, error: string|null }}
+ *
+ * Validates: Requirements 2.3, 2.4
+ */
+export function validarCantidadMedicamento(cantidad, stockDisponible) {
+    // Handle non-numeric or invalid stockDisponible
+    if (typeof stockDisponible !== 'number' || !isFinite(stockDisponible) || stockDisponible <= 0) {
+        return { valido: false, cantidadFinal: 0, error: "Stock no disponible" };
+    }
+
+    // Handle non-numeric or invalid cantidad
+    if (typeof cantidad !== 'number' || !isFinite(cantidad)) {
+        return { valido: false, cantidadFinal: 1, error: "La cantidad debe ser un número válido" };
+    }
+
+    // Validate range: cantidad < 1
+    if (cantidad < 1) {
+        return { valido: false, cantidadFinal: 1, error: "La cantidad debe ser mayor a 0" };
+    }
+
+    // Validate range: cantidad > stockDisponible
+    if (cantidad > stockDisponible) {
+        return { valido: false, cantidadFinal: stockDisponible, error: `Stock máximo disponible: ${stockDisponible}` };
+    }
+
+    // Valid range: 1 <= cantidad <= stockDisponible
+    return { valido: true, cantidadFinal: cantidad, error: null };
+}
+
+/**
+ * Elimina un medicamento del carrito por su productoId.
+ * @param {Array} carrito - Lista actual del carrito.
+ * @param {number} productoId - ID del producto a eliminar.
+ * @returns {Array} Nuevo estado del carrito sin el item.
+ *
+ * Validates: Requirements 2.5
+ */
+export function eliminarDelCarrito(carrito, productoId) {
+    if (!Array.isArray(carrito)) return [];
+    if (productoId == null) return [...carrito];
+
+    return carrito.filter(item => item.productoId !== productoId);
+}
+
+/**
+ * Serializa la lista de medicamentos seleccionados a texto JSON.
+ * @param {Array} items - Lista [{nombre, lote, cantidad}].
+ * @returns {string} JSON string con el detalle.
+ *
+ * Validates: Requirements 3.1, 5.1, 5.2
+ */
+export function serializarMedicamentosConsulta(items) {
+    if (!Array.isArray(items) || items.length === 0) return "[]";
+
+    const mapped = items.map(item => ({
+        nombre: item.nombre || '',
+        lote: item.lote || '',
+        cantidad: item.cantidad || 0
+    }));
+
+    return JSON.stringify(mapped);
+}
+
+/**
+ * Deserializa el texto de medicamentos almacenado (JSON o texto legacy).
+ * @param {string} texto - Contenido de cm_medicamentos_aplicados.
+ * @returns {Array} Lista [{nombre, lote, cantidad}] o [{texto}] para legacy.
+ *
+ * Validates: Requirements 3.1, 5.1, 5.2
+ */
+export function deserializarMedicamentosConsulta(texto) {
+    if (texto == null || texto === '') return [];
+
+    if (typeof texto !== 'string') return [];
+
+    const trimmed = texto.trim();
+    if (trimmed === '') return [];
+
+    try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+            return parsed.map(item => ({
+                nombre: item.nombre || '',
+                lote: item.lote || '',
+                cantidad: item.cantidad || 0
+            }));
+        }
+        // If parsed but not an array, treat as legacy
+        return [{ texto: trimmed }];
+    } catch (e) {
+        // Not valid JSON — legacy plain text
+        return [{ texto: trimmed }];
+    }
+}
+
+/**
+ * Construye el objeto de movimiento de inventario para un descuento por consulta.
+ * @param {number} productoId - ID del producto.
+ * @param {number} cantidad - Cantidad a descontar.
+ * @param {number} costoUnitario - Costo de compra del producto.
+ * @param {number} saldoResultante - Stock después del descuento.
+ * @param {number} idConsulta - ID de la consulta médica.
+ * @returns {Object} Objeto listo para insertar en movimientos_inventario.
+ *
+ * Validates: Requirements 4.2, 4.3
+ */
+export function construirMovimientoConsulta(productoId, cantidad, costoUnitario, saldoResultante, idConsulta) {
+    return {
+        mi_pr_id_producto: productoId,
+        mi_tmi_id_tipo: 4,
+        mi_cantidad: cantidad,
+        mi_costo_unitario: costoUnitario,
+        mi_saldo_resultante: saldoResultante,
+        mi_notas: "Consulta médica #" + idConsulta
+    };
+}
+
 // ================= PROVEEDORES =================
 
 /**

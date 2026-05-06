@@ -736,6 +736,15 @@ li {
     max-width: 60vw;
 }
 
+#modalRegistroConsulta .modal-body > .row:first-of-type {
+    align-items: stretch;
+}
+
+#modalRegistroConsulta .modal-body > .row:first-of-type > .col-md-6:first-child {
+    display: flex;
+    flex-direction: column;
+}
+
 .modal-xxl {
     max-width: 1300px !important;
 }
@@ -927,20 +936,26 @@ li {
 /* ===== Observaciones ===== */
 .observaciones-box {
     margin-top: 15px;
+    margin-bottom: 0;
     border-radius: 6px;
     padding: 12px;
     background: #fafafa;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 .observaciones-title {
     font-weight: bold;
-    font-size: 18px;
+    font-size: 14px;
     display: block;
     margin-bottom: 8px;
 }
 
 .observaciones-text {
-    height: 80px;
+    flex: 1;
+    min-height: 40px;
     resize: none;
     font-size: 13px;
 }
@@ -960,7 +975,7 @@ li {
 }
 
 .diag-textarea {
-    height: 170px;
+    height: 100px;
     resize: none;
     font-size: 13px;
     line-height: 1.4;
@@ -987,6 +1002,11 @@ li {
 
 .motivo-input {
     flex: 1;
+}
+
+.motivo-input textarea {
+    height: 50px;
+    resize: none;
 }
 
 .peso-box {
@@ -1019,8 +1039,25 @@ li {
     margin-bottom: 10px;
 }
 
+.presupuesto-box label {
+    font-size: 13px;
+}
+
+.presupuesto-input {
+    height: 35px;
+}
+
 .presupuesto-input input {
     height: 35px;
+    font-size: 13px;
+}
+
+.presupuesto-input .input-group-text {
+    height: 35px;
+    font-size: 13px;
+    padding: 0 10px;
+    display: flex;
+    align-items: center;
 }
 
 input[type=number]::-webkit-inner-spin-button,
@@ -1120,7 +1157,7 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 textarea.form-control {
-    resize: vertical;
+    resize: none;
 }
 
 /* ===== Consulta Buttons ===== */
@@ -1192,4 +1229,121 @@ textarea.form-control {
 .modal-body textarea:focus {
     border-color: #7fc8a9;
     box-shadow: 0 0 0 0.15rem rgba(127, 200, 169, 0.25);
+}
+
+/* ===== Carrito Medicamentos Consulta ===== */
+
+.dropdown-resultados {
+    position: absolute;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1050;
+}
+
+.dropdown-resultados .resultado-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 12px;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background 0.15s;
+}
+
+.dropdown-resultados .resultado-item:last-child {
+    border-bottom: none;
+}
+
+.dropdown-resultados .resultado-item:hover {
+    background-color: #e8f5e9;
+}
+
+.dropdown-resultados .resultado-item.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #f8f8f8;
+}
+
+.dropdown-resultados .resultado-item.disabled:hover {
+    background-color: #f8f8f8;
+}
+
+.dropdown-resultados .resultado-item .badge-sin-stock {
+    background-color: #dc3545;
+    color: #fff;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-left: 6px;
+}
+
+#busquedaMedicamentoWrapper {
+    position: relative;
+    margin-bottom: 8px;
+}
+
+.lista-medicamentos-seleccionados {
+    margin-top: 8px;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.med-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 6px;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 11px;
+}
+
+.med-item:last-child {
+    border-bottom: none;
+}
+
+.med-item .med-nombre {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.med-item .med-cantidad {
+    width: 50px;
+    height: 24px;
+    font-size: 11px;
+    text-align: center;
+    padding: 2px 4px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.med-item .btn-eliminar-med {
+    background: none;
+    border: none;
+    color: #dc3545;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+}
+
+.med-item .btn-eliminar-med:hover {
+    color: #a71d2a;
+}
+
+.lista-medicamentos-readonly .med-item {
+    cursor: default;
+}
+
+.lista-medicamentos-readonly .med-item .med-cantidad {
+    border: none;
+    background: transparent;
+    font-weight: 600;
 }

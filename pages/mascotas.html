@@ -102,11 +102,12 @@
                     <img src="../Images/mascotas.png" alt="Usuario" class="user-icon">
                     <span class="text">MASCOTAS</span>
                 </div>
-                <div class="filter-row">
-                    <button type="button" class="btn btn-success" id="btnRegresar">
-                        ⏪ Regresar
-                    </button>
-                </div>
+                <button type="button" class="btn btn-success" id="btnRegresar">
+                    ⏪ Regresar
+                </button>
+
+                <br>
+                <br>
 
                 <div class="container-fluid px-3">
                     <div class="row gx-2">
@@ -426,10 +427,14 @@
 
                                         <!-- MEDICAMENTOS APLICADOS -->
                                         <div class="col-md-4">
-                                            <div class="diagnostico-box">
+                                            <div class="diagnostico-box" id="carritoMedicamentos">
                                                 <label class="font-weight-bold">MEDICAMENTOS APLICADOS</label>
-                                                <textarea class="form-control diag-textarea"
-                                                    id="cm_medicamentos_aplicados"></textarea>
+                                                <div id="busquedaMedicamentoWrapper">
+                                                    <input type="text" class="form-control form-control-sm" id="buscarMedicamento" 
+                                                           placeholder="Buscar medicamento..." autocomplete="off">
+                                                    <div id="resultadosMedicamentos" class="dropdown-resultados" style="display:none;"></div>
+                                                </div>
+                                                <div id="listaMedicamentosSeleccionados" class="lista-medicamentos-seleccionados"></div>
                                             </div>
                                         </div>
 
@@ -457,9 +462,9 @@
                                 </div>
                                 <div class="modal-footer">
 
-                                    <button type="button" id="btnFinalizarConsulta" class="btn btn-success btn-sm"
+                                    <button type="button" id="btnVerSeguimientos" class="btn btn-success btn-sm"
                                         style="display:none;">
-                                        Finalizar consulta
+                                        Ver seguimientos
                                     </button>
 
                                     <button type="button" id="btnLimpiarCampos" class="btn btn-secondary btn-sm"

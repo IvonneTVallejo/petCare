@@ -17,16 +17,16 @@ let veterinariosCache = [];
 let clientesCache = [];
 
 // Transiciones de estado permitidas
-// 1=Programada, 2=Cancelada, 3=Generar Consulta, 4=Finalizada, 5=No asistió
+// 1=Programada, 2=Cancelada, 3=Finalizada, 4=Finalizada, 5=No asistió
 const TRANSICIONES_ESTADO = {
-    1: [2, 3, 5],    // Programada → Cancelada, Generar Consulta, No asistió
-    3: [4]            // Generar Consulta → Finalizada
+    1: [3, 2, 5],    // Programada → Cancelada, Finalizada, No asistió
+    3: [4]            // Finalizada → Finalizada
 };
 
 const COLORES_ESTADO = {
     1: '#007bff',  // Programada - Azul
     2: '#dc3545',  // Cancelada - Rojo
-    3: '#ffc107',  // Generar Consulta - Amarillo
+    3: '#ffc107',  // Finalizada - Amarillo
     4: '#6c757d',  // Finalizada - Gris
     5: '#fd7e14'   // No asistió - Naranja
 };
@@ -34,7 +34,7 @@ const COLORES_ESTADO = {
 const NOMBRES_ESTADO = {
     1: 'Programada',
     2: 'Cancelada',
-    3: 'Generar Consulta',
+    3: 'Finalizada',
     4: 'Finalizada',
     5: 'No asistió'
 };
