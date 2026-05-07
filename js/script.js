@@ -20,9 +20,7 @@ sidebarToggle.addEventListener("click", () => {
     } else {
         localStorage.setItem("status", "open");
     }
-})
-
-var tipoUsuario = localStorage.getItem("tipoUsuario");
+});
 
 var username = localStorage.getItem("nombreVet");
 
@@ -30,28 +28,11 @@ var usernameDisplay = document.getElementById("usernameDisplay");
 usernameDisplay.innerHTML = `<img src="../Images/sesion.png" /> Usuario: ${username}`;
 
 
-
-//var paginasRestringidas = ["usuarios.html", "salario.html"]; 
-
-var url = window.location.href;
-var fileName = url.substring(url.lastIndexOf('/') + 1);
-
-//if (paginasRestringidas.includes(fileName) && tipoUsuario === "asesor") {
-//   window.location.href = '/pages/accesoDenegado.html';
-//}
-
-if (tipoUsuario === "asesor") {
-    $("#pageSalario").hide();
-    $("#pageUsuarios").hide();
-}
-
-//if (!localStorage.getItem('idUser')) {
-//   window.location.href = '/pages/accesoDenegado.html';
-//} 
-
-
-function cerrarSesion() {
-    localStorage.clear();
-    sessionStorage.clear();
-    window.location.href = '../index.html';
+// Fallback cerrarSesion — auth-guard.js defines this if loaded first
+if (typeof cerrarSesion !== 'function') {
+    window.cerrarSesion = function() {
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.href = '../index.html';
+    };
 }

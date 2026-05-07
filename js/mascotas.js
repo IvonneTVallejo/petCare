@@ -1,6 +1,21 @@
 let mascota = null;
 let consultaActualId = null;
 
+// ================= QUERY PARAMS FROM AGENDA =================
+
+function leerParametrosCita() {
+    const params = new URLSearchParams(window.location.search);
+    const citaId = params.get('citaId');
+    if (!citaId) return null;
+    return {
+        citaId: parseInt(citaId),
+        clienteId: parseInt(params.get('clienteId')),
+        mascotaId: parseInt(params.get('mascotaId')),
+        vetDoc: parseInt(params.get('vetDoc')),
+        fecha: params.get('fecha')
+    };
+}
+
 
 function limpiarCamposConsulta() {
     document.getElementById("formConsulta").reset();
@@ -22,6 +37,15 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 document.addEventListener("DOMContentLoaded", async () => {
+
+    // Check if coming from agenda with cita params
+    const citaParams = leerParametrosCita();
+    if (citaParams) {
+        // Store citaId for later use when saving consultation
+        localStorage.setItem('citaIdPendiente', citaParams.citaId);
+        // Use mascotaId from query params
+        localStorage.setItem("mascotaId", citaParams.mascotaId);
+    }
 
     const mascotaId = localStorage.getItem("mascotaId");
     if (!mascotaId) return;
@@ -61,6 +85,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     btnGenerarConsulta.disabled = false;
     cargarConsultas();
+
+    // If coming from agenda, auto-open consultation modal
+    if (citaParams) {
+        document.getElementById("dm_dc_id_cliente").value = mascota.dm_dc_id_cliente;
+        document.getElementById("dm_id_mascota").value = mascota.dm_id_mascota;
+        limpiarCamposConsulta();
+        $('#modalRegistroConsulta').modal('show');
+    }
 });
 
 
@@ -116,6 +148,20 @@ document.getElementById("formConsulta")
             // Task 6.4: Descontar inventario después de guardar consulta
             if (medicamentosSeleccionados.length > 0) {
                 await descontarInventarioConsulta(idConsulta, medicamentosSeleccionados);
+            }
+
+            // If there's a pending citaId from agenda, update the cita to Finalizada
+            const citaIdPendiente = localStorage.getItem('citaIdPendiente');
+            if (citaIdPendiente) {
+                await supabaseClient
+                    .from("citas")
+                    .update({ 
+                        ct_eci_id_estado_cita: 2,
+                        ct_cm_id_consulta: idConsulta
+                    })
+                    .eq("ct_id_cita", parseInt(citaIdPendiente));
+                
+                localStorage.removeItem('citaIdPendiente');
             }
 
             await Swal.fire({
