@@ -37,7 +37,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 document.addEventListener("DOMContentLoaded", async () => {
-
+    
     // Check if coming from agenda with cita params
     const citaParams = leerParametrosCita();
     if (citaParams) {
@@ -85,7 +85,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     btnGenerarConsulta.disabled = false;
     cargarConsultas();
-
+    
     // If coming from agenda, auto-open consultation modal
     if (citaParams) {
         document.getElementById("dm_dc_id_cliente").value = mascota.dm_dc_id_cliente;
@@ -149,7 +149,7 @@ document.getElementById("formConsulta")
             if (medicamentosSeleccionados.length > 0) {
                 await descontarInventarioConsulta(idConsulta, medicamentosSeleccionados);
             }
-
+            
             // If there's a pending citaId from agenda, update the cita to Finalizada
             const citaIdPendiente = localStorage.getItem('citaIdPendiente');
             if (citaIdPendiente) {
