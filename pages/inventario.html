@@ -134,6 +134,14 @@
                         data-target="#modalAjuste" id="btnAjuste">
                         Ajuste
                     </button>
+                    <button type="button" class="btn btn-success" data-toggle="modal"
+                        data-target="#modalCargaMasiva">
+                        📥 Cargue Masivo
+                    </button>
+                    <button type="button" class="btn btn-success" data-toggle="modal"
+                        data-target="#modalActualizacionMasiva">
+                        📤 Actualización Masiva
+                    </button>
                 </div>
 
                 <!-- Products Table -->
@@ -404,6 +412,98 @@
     </section>
     <!-- Fin contenido principal -->
 
+    <!-- ============================================ -->
+    <!-- Modal: Carga Masiva de Productos Nuevos -->
+    <!-- ============================================ -->
+    <div class="modal fade" id="modalCargaMasiva" tabindex="-1" aria-labelledby="modalCargaMasivaLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="modalCargaMasivaLabel">Cargue Masivo de Productos Nuevos</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <button type="button" class="btn btn-outline-success btn-sm" id="btnDescargarPlantilla">
+                        📄 Descargar Plantilla
+                    </button>
+                    <hr>
+                    <div class="form-group">
+                        <input type="file" class="form-control-file" id="inputCargaMasiva" accept=".csv,.xlsx,.xls">
+                    </div>
+                    <button type="button" class="btn btn-success btn-sm" id="btnCargarPlantilla">
+                        📥 Cargar Plantilla
+                    </button>
+                    <div id="progressCarga" class="mt-3" style="display:none;">
+                        <div class="progress">
+                            <div class="progress-bar bg-success" style="width:0%">0%</div>
+                        </div>
+                    </div>
+                    <div id="previewCarga" class="mt-3" style="display:none; max-height:300px; overflow-y:auto;">
+                    </div>
+                    <div id="accionesCarga" class="mt-3" style="display:none;">
+                        <button type="button" class="btn btn-success btn-sm" id="btnConfirmarCarga">
+                            ✅ Confirmar y Aplicar
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-sm" id="btnCancelarCarga">
+                            Cancelar
+                        </button>
+                        <button type="button" class="btn btn-warning btn-sm" id="btnReporteErroresCarga">
+                            📋 Descargar Reporte de Errores
+                        </button>
+                    </div>
+                    <div id="resumenCarga" class="mt-3" style="display:none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- Modal: Actualización Masiva de Productos -->
+    <!-- ============================================ -->
+    <div class="modal fade" id="modalActualizacionMasiva" tabindex="-1" aria-labelledby="modalActualizacionMasivaLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="modalActualizacionMasivaLabel">Actualización Masiva de Productos</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <button type="button" class="btn btn-outline-success btn-sm" id="btnDescargarInventario">
+                        📄 Descargar Inventario Actual
+                    </button>
+                    <hr>
+                    <div class="form-group">
+                        <input type="file" class="form-control-file" id="inputActualizacion" accept=".csv,.xlsx,.xls">
+                    </div>
+                    <button type="button" class="btn btn-success btn-sm" id="btnCargarActualizacion">
+                        📤 Cargar Actualización
+                    </button>
+                    <div id="progressActualizacion" class="mt-3" style="display:none;">
+                        <div class="progress">
+                            <div class="progress-bar bg-success" style="width:0%">0%</div>
+                        </div>
+                    </div>
+                    <div id="previewActualizacion" class="mt-3" style="display:none; max-height:300px; overflow-y:auto;">
+                    </div>
+                    <div id="accionesActualizacion" class="mt-3" style="display:none;">
+                        <button type="button" class="btn btn-success btn-sm" id="btnConfirmarActualizacion">
+                            ✅ Confirmar y Aplicar
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-sm" id="btnCancelarActualizacion">
+                            Cancelar
+                        </button>
+                        <button type="button" class="btn btn-warning btn-sm" id="btnReporteErroresActualizacion">
+                            📋 Descargar Reporte de Errores
+                        </button>
+                    </div>
+                    <div id="resumenActualizacion" class="mt-3" style="display:none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Import librerias JS -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://code.jquery.com/jquery-3.6.3.min.js"></script>
@@ -413,6 +513,9 @@
         crossorigin="anonymous"></script>
     <script src="../js/auth-guard.js"></script>
     <script src="../js/script.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
     <script src="../js/inventario.js"></script>
     <link rel="stylesheet" href="../css/loader.css">
     <script src="../js/loader.js"></script>

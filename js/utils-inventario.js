@@ -595,3 +595,206 @@ export function validarRangoFechas(inicio, fin) {
 
     return fechaInicio <= fechaFin;
 }
+
+
+// ================= GESTIÓN MASIVA CSV - FUNCIONES PURAS =================
+
+/**
+ * Valida que la extensión del archivo sea .csv, .xlsx o .xls (case-insensitive).
+ * @param {string} nombreArchivo - Nombre del archivo a validar.
+ * @returns {boolean} true si la extensión es válida.
+ *
+ * Validates: Requirements 3.1, 5.1, 6.1
+ */
+export function validarExtensionArchivo(nombreArchivo) {
+    if (!nombreArchivo || typeof nombreArchivo !== 'string') return false;
+    const ext = nombreArchivo.toLowerCase();
+    return ext.endsWith('.csv') || ext.endsWith('.xlsx') || ext.endsWith('.xls');
+}
+
+/**
+ * Valida que los encabezados del CSV coincidan exactamente con los esperados.
+ * @param {string[]} encabezados - Encabezados del archivo parseado.
+ * @param {string[]} encabezadosEsperados - Encabezados que debe tener.
+ * @returns {{valido: boolean, mensaje: string|null}}
+ *
+ * Validates: Requirements 3.4, 5.3
+ */
+export function validarEstructuraCSV(encabezados, encabezadosEsperados) {
+    if (!Array.isArray(encabezados) || !Array.isArray(encabezadosEsperados)) {
+        return { valido: false, mensaje: 'Encabezados inválidos' };
+    }
+    const headersMatch = encabezadosEsperados.every(h => encabezados.includes(h));
+    if (!headersMatch) {
+        return { valido: false, mensaje: `Encabezados incorrectos. Esperados: ${encabezadosEsperados.join(', ')}` };
+    }
+    return { valido: true, mensaje: null };
+}
+
+/**
+ * Valida una fila de producto según campos obligatorios, tipos numéricos,
+ * reglas de negocio e integridad referencial.
+ * @param {object} fila - Objeto con los datos de una fila.
+ * @param {number[]} categoriasValidas - IDs de categorías existentes.
+ * @param {number[]} proveedoresValidos - IDs de proveedores existentes.
+ * @param {string} modo - 'carga' o 'actualizacion'.
+ * @returns {{valida: boolean, errores: string[]}}
+ *
+ * Validates: Requirements 3.5, 3.6, 3.7, 3.8, 3.9, 5.4, 5.5, 5.6, 5.7
+ */
+export function validarFilaProductoCSV(fila, categoriasValidas, proveedoresValidos, modo) {
+    const errores = [];
+    const CAMPOS_OBLIGATORIOS = ['pr_nombre', 'pr_descripcion', 'pr_cat_id_categoria', 'pr_prov_id_proveedor', 'pr_costo_compra', 'pr_precio_venta', 'pr_cantidad_disponible', 'pr_stock_minimo', 'pr_lote'];
+
+    if (!fila || typeof fila !== 'object') {
+        return { valida: false, errores: ['Fila inválida'] };
+    }
+
+    // Required fields
+    CAMPOS_OBLIGATORIOS.forEach(campo => {
+        if (!fila[campo] || String(fila[campo]).trim() === '') {
+            errores.push(`Campo "${campo}" es obligatorio`);
+        }
+    });
+
+    // If in update mode, validate pr_id_producto
+    if (modo === 'actualizacion') {
+        if (!fila.pr_id_producto || isNaN(parseInt(fila.pr_id_producto))) {
+            errores.push('pr_id_producto debe ser un número válido');
+        }
+    }
+
+    // Numeric validations
+    const costo = parseFloat(fila.pr_costo_compra);
+    const precio = parseFloat(fila.pr_precio_venta);
+    const cantidad = parseInt(fila.pr_cantidad_disponible);
+    const stockMin = parseInt(fila.pr_stock_minimo);
+
+    if (fila.pr_costo_compra && String(fila.pr_costo_compra).trim() !== '' && (isNaN(costo) || costo <= 0)) {
+        errores.push('pr_costo_compra debe ser un número positivo');
+    }
+    if (fila.pr_precio_venta && String(fila.pr_precio_venta).trim() !== '' && (isNaN(precio) || precio <= 0)) {
+        errores.push('pr_precio_venta debe ser un número positivo');
+    }
+    if (fila.pr_cantidad_disponible && String(fila.pr_cantidad_disponible).trim() !== '' && (isNaN(cantidad) || cantidad < 0)) {
+        errores.push('pr_cantidad_disponible debe ser un entero >= 0');
+    }
+    if (fila.pr_stock_minimo && String(fila.pr_stock_minimo).trim() !== '' && (isNaN(stockMin) || stockMin < 0)) {
+        errores.push('pr_stock_minimo debe ser un entero >= 0');
+    }
+    if (!isNaN(costo) && !isNaN(precio) && costo > 0 && precio > 0 && precio < costo) {
+        errores.push('pr_precio_venta debe ser >= pr_costo_compra');
+    }
+
+    // Referential integrity
+    if (Array.isArray(categoriasValidas)) {
+        const catId = parseInt(fila.pr_cat_id_categoria);
+        if (!isNaN(catId) && !categoriasValidas.includes(catId)) {
+            errores.push(`Categoría ${catId} no existe`);
+        }
+    }
+    if (Array.isArray(proveedoresValidos)) {
+        const provId = parseInt(fila.pr_prov_id_proveedor);
+        if (!isNaN(provId) && !proveedoresValidos.includes(provId)) {
+            errores.push(`Proveedor ${provId} no existe`);
+        }
+    }
+
+    // Date validation
+    if (fila.pr_fecha_vencimiento && String(fila.pr_fecha_vencimiento).trim() !== '') {
+        const vFecha = validarFormatoFechaCSV(fila.pr_fecha_vencimiento);
+        if (!vFecha.valido) errores.push(`pr_fecha_vencimiento: ${vFecha.error}`);
+    }
+
+    return { valida: errores.length === 0, errores };
+}
+
+/**
+ * Valida formato de fecha YYYY-MM-DD y que sea una fecha real.
+ * @param {string} fecha - String de fecha a validar.
+ * @returns {{valido: boolean, error: string|null}}
+ *
+ * Validates: Requirements 3.9
+ */
+export function validarFormatoFechaCSV(fecha) {
+    if (!fecha || String(fecha).trim() === '') return { valido: true, error: null }; // Optional field
+    const str = String(fecha).trim();
+    const regex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!regex.test(str)) return { valido: false, error: 'Formato debe ser YYYY-MM-DD' };
+    const parts = str.split('-');
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10);
+    const day = parseInt(parts[2], 10);
+    if (month < 1 || month > 12) return { valido: false, error: 'Mes inválido' };
+    const daysInMonth = new Date(year, month, 0).getDate();
+    if (day < 1 || day > daysInMonth) return { valido: false, error: 'Día inválido para el mes' };
+    return { valido: true, error: null };
+}
+
+/**
+ * Detecta duplicados internos en el CSV (mismo nombre + lote, case-insensitive, trimmed).
+ * @param {object[]} filas - Todas las filas parseadas.
+ * @returns {Set<number>} - Índices de filas duplicadas.
+ *
+ * Validates: Requirements 3.10
+ */
+export function detectarDuplicadosInternosCSV(filas) {
+    if (!Array.isArray(filas)) return new Set();
+    const duplicados = new Set();
+    const vistos = {};
+    filas.forEach((fila, idx) => {
+        if (!fila) return;
+        const nombre = (fila.pr_nombre || '').trim().toLowerCase();
+        const lote = (fila.pr_lote || '').trim().toLowerCase();
+        const key = `${nombre}|${lote}`;
+        if (vistos[key] !== undefined) {
+            duplicados.add(vistos[key]);
+            duplicados.add(idx);
+        } else {
+            vistos[key] = idx;
+        }
+    });
+    return duplicados;
+}
+
+/**
+ * Filtra filas completamente vacías (todos los campos vacíos o undefined).
+ * @param {object[]} filas - Filas parseadas del CSV.
+ * @returns {object[]} Filas que tienen al menos un campo con valor.
+ *
+ * Validates: Requirements 6.4
+ */
+export function filtrarFilasVaciasCSV(filas) {
+    if (!Array.isArray(filas)) return [];
+    return filas.filter(fila => {
+        if (!fila) return false;
+        return Object.values(fila).some(val => val !== null && val !== undefined && String(val).trim() !== '');
+    });
+}
+
+/**
+ * Genera contenido CSV a partir de un array de objetos y encabezados.
+ * Incluye BOM UTF-8 y escapa campos con comas, comillas o saltos de línea.
+ * @param {object[]} filas - Array de objetos con los datos.
+ * @param {string[]} encabezados - Columnas a incluir en orden.
+ * @returns {string} Contenido CSV con BOM.
+ *
+ * Validates: Requirements 2.1, 4.2, 4.3
+ */
+export function generarContenidoCSV(filas, encabezados) {
+    if (!Array.isArray(filas) || !Array.isArray(encabezados)) return '';
+    const escapar = (val) => {
+        if (val === null || val === undefined) return '';
+        const str = String(val);
+        if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+            return '"' + str.replace(/"/g, '""') + '"';
+        }
+        return str;
+    };
+    const lineas = [encabezados.join(',')];
+    filas.forEach(fila => {
+        const valores = encabezados.map(h => escapar(fila[h]));
+        lineas.push(valores.join(','));
+    });
+    return lineas.join('\n');
+}
