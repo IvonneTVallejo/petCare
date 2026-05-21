@@ -19,6 +19,7 @@ const CATEGORIAS_CON_VENCIMIENTO = [1, 2, 4];
 document.addEventListener("DOMContentLoaded", async () => {
     await cargarCategorias();
     await cargarProveedores();
+    await cargarUnidadesMedida();
     await cargarProductos();
     await calcularAlertasStock();
     await calcularAlertasVencimiento();
@@ -53,7 +54,7 @@ function renderizarTablaProductos(productos) {
     if (!productos || productos.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="10" class="text-center text-muted">
+                <td colspan="11" class="text-center text-muted">
                     No hay productos registrados
                 </td>
             </tr>`;
@@ -81,6 +82,7 @@ function renderizarTablaProductos(productos) {
             <td>${p.pr_stock_minimo}</td>
             <td>$${Number(p.pr_precio_venta).toLocaleString("es-CO")}</td>
             <td>${p.pr_lote}</td>
+            <td>${p.pr_unidad_medida || '-'}</td>
             <td>${fechaVenc}</td>
             <td><span class="badge badge-estado ${badgeClass}">${badgeText}</span></td>
             <td>
@@ -196,6 +198,28 @@ async function cargarProveedores() {
     });
 }
 
+// ================= LOAD UNIDADES DE MEDIDA =================
+
+async function cargarUnidadesMedida() {
+    const { data, error } = await supabaseClient
+        .from("unidad_medida")
+        .select("*")
+        .order("um_nombre");
+
+    if (error) return;
+
+    const select = document.getElementById("pr_unidad_medida");
+    if (!select) return;
+
+    select.innerHTML = '<option value="">Seleccione...</option>';
+    data.forEach(um => {
+        const opt = document.createElement("option");
+        opt.value = um.um_abreviatura;
+        opt.textContent = `${um.um_nombre} (${um.um_abreviatura})`;
+        select.appendChild(opt);
+    });
+}
+
 // ================= REGISTER PRODUCT =================
 
 document.getElementById("formProducto")
@@ -213,7 +237,8 @@ document.getElementById("formProducto")
             pr_precio_venta: parseFloat(document.getElementById("pr_precio_venta").value),
             pr_cantidad_disponible: parseInt(document.getElementById("pr_cantidad_disponible").value),
             pr_stock_minimo: parseInt(document.getElementById("pr_stock_minimo").value),
-            pr_lote: document.getElementById("pr_lote").value.trim()
+            pr_lote: document.getElementById("pr_lote").value.trim(),
+            pr_unidad_medida: document.getElementById("pr_unidad_medida").value || null
         };
 
         // Conditional fecha_vencimiento
@@ -724,6 +749,7 @@ async function abrirEditarProducto(id) {
     document.getElementById("pr_cantidad_disponible").value = producto.pr_cantidad_disponible;
     document.getElementById("pr_stock_minimo").value = producto.pr_stock_minimo;
     document.getElementById("pr_lote").value = producto.pr_lote;
+    document.getElementById("pr_unidad_medida").value = producto.pr_unidad_medida || '';
 
     // Handle fecha_vencimiento conditional field
     const fechaInput = document.getElementById("pr_fecha_vencimiento");

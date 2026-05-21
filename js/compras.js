@@ -71,16 +71,13 @@ function renderizarTablaOrdenes(ordenes) {
 
         const provNombre = o.proveedores ? o.proveedores.prov_nombre : "-";
 
-        // Action buttons: Recibir (only if pendiente or recibida_parcial), Cancelar (only if pendiente)
-        let acciones = "";
+        // Action buttons
+        let acciones = `<button class="btn btn-primary btn-sm btn-accion" onclick="verArticulosOrden(${o.oc_id_orden}, '${o.oc_numero_orden}')" title="Ver artículos">👁️</button>`;
         if (estadoId === 1 || estadoId === 2) {
             acciones += `<button class="btn btn-info btn-accion btn-recibir-orden" data-id="${o.oc_id_orden}" data-numero="${o.oc_numero_orden}" data-proveedor="${provNombre}" title="Recibir">📦</button>`;
         }
         if (estadoId === 1) {
             acciones += `<button class="btn btn-danger btn-accion btn-cancelar-orden" data-id="${o.oc_id_orden}" title="Cancelar">❌</button>`;
-        }
-        if (!acciones) {
-            acciones = '<span class="text-muted">-</span>';
         }
 
         tbody.innerHTML += `
@@ -92,6 +89,136 @@ function renderizarTablaOrdenes(ordenes) {
             <td><span class="badge badge-estado ${badgeClass}">${estado.replace(/_/g, " ")}</span></td>
             <td>${acciones}</td>
         </tr>`;
+    });
+}
+
+
+// ================= VER ARTÍCULOS DE ORDEN =================
+
+async function verArticulosOrden(ordenId, numeroOrden) {
+    const { data, error } = await supabaseClient
+        .from("detalle_orden_compra")
+        .select(`
+            *,
+            productos (pr_nombre, pr_lote)
+        `)
+        .eq("doc_oc_id_orden", ordenId);
+
+    if (error) {
+        await Swal.fire({ title: 'Error', text: error.message, icon: 'error' });
+        return;
+    }
+
+    let tablaHTML = `
+        <table class="table table-sm table-striped" style="font-size:0.85rem;">
+            <thead><tr>
+                <th>Producto</th>
+                <th>Lote</th>
+                <th>Cantidad</th>
+                <th>Recibida</th>
+                <th>Costo Unit.</th>
+                <th>Subtotal</th>
+            </tr></thead><tbody>`;
+
+    (data || []).forEach(d => {
+        const nombre = d.productos ? d.productos.pr_nombre : `Producto #${d.doc_pr_id_producto}`;
+        const lote = d.productos ? d.productos.pr_lote : '-';
+        tablaHTML += `<tr>
+            <td>${nombre}</td>
+            <td>${lote}</td>
+            <td>${d.doc_cantidad}</td>
+            <td>${d.doc_cantidad_recibida || 0}</td>
+            <td>$${Number(d.doc_costo_unitario).toLocaleString("es-CO")}</td>
+            <td>$${Number(d.doc_subtotal).toLocaleString("es-CO")}</td>
+        </tr>`;
+    });
+
+    tablaHTML += '</tbody></table>';
+
+    await Swal.fire({
+        title: `Artículos - Orden ${numeroOrden}`,
+        html: tablaHTML,
+        width: '700px',
+        showCloseButton: true,
+        showConfirmButton: false
+    });
+}
+
+// ================= VER DETALLE FACTURA =================
+
+async function verDetalleFactura(facturaId, numeroFactura) {
+    // Obtener la factura con su orden asociada
+    const { data: factura, error: errFactura } = await supabaseClient
+        .from("facturas_compra")
+        .select(`
+            *,
+            proveedores (prov_nombre),
+            ordenes_compra (oc_id_orden, oc_numero_orden, oc_total, oc_fecha_creacion)
+        `)
+        .eq("fc_id_factura", facturaId)
+        .single();
+
+    if (errFactura || !factura) {
+        await Swal.fire({ title: 'Error', text: 'No se pudo cargar la factura', icon: 'error' });
+        return;
+    }
+
+    // Obtener artículos de la orden asociada
+    let articulosHTML = '<p class="text-muted">Sin orden asociada</p>';
+    if (factura.ordenes_compra) {
+        const { data: detalles } = await supabaseClient
+            .from("detalle_orden_compra")
+            .select(`*, productos (pr_nombre, pr_lote)`)
+            .eq("doc_oc_id_orden", factura.ordenes_compra.oc_id_orden);
+
+        if (detalles && detalles.length > 0) {
+            articulosHTML = `
+                <p><strong>Orden:</strong> ${factura.ordenes_compra.oc_numero_orden} | <strong>Total orden:</strong> $${Number(factura.ordenes_compra.oc_total).toLocaleString("es-CO")}</p>
+                <table class="table table-sm table-striped" style="font-size:0.85rem;">
+                    <thead><tr>
+                        <th>Producto</th>
+                        <th>Lote</th>
+                        <th>Cantidad</th>
+                        <th>Recibida</th>
+                        <th>Costo Unit.</th>
+                        <th>Subtotal</th>
+                    </tr></thead><tbody>`;
+
+            detalles.forEach(d => {
+                const nombre = d.productos ? d.productos.pr_nombre : '-';
+                const lote = d.productos ? d.productos.pr_lote : '-';
+                articulosHTML += `<tr>
+                    <td>${nombre}</td>
+                    <td>${lote}</td>
+                    <td>${d.doc_cantidad}</td>
+                    <td>${d.doc_cantidad_recibida || 0}</td>
+                    <td>$${Number(d.doc_costo_unitario).toLocaleString("es-CO")}</td>
+                    <td>$${Number(d.doc_subtotal).toLocaleString("es-CO")}</td>
+                </tr>`;
+            });
+
+            articulosHTML += '</tbody></table>';
+        }
+    }
+
+    const contenido = `
+        <div style="text-align:left;">
+            <p><strong>Proveedor:</strong> ${factura.proveedores?.prov_nombre || '-'}</p>
+            <p><strong>Fecha factura:</strong> ${new Date(factura.fc_fecha_factura).toLocaleDateString("es-CO")}</p>
+            <p><strong>Monto total:</strong> $${Number(factura.fc_monto_total).toLocaleString("es-CO")}</p>
+            <p><strong>Estado:</strong> ${factura.fc_estado_pago}</p>
+            <hr>
+            <h6>Artículos de la Orden de Compra</h6>
+            ${articulosHTML}
+        </div>
+    `;
+
+    await Swal.fire({
+        title: `Factura ${numeroFactura}`,
+        html: contenido,
+        width: '750px',
+        showCloseButton: true,
+        showConfirmButton: false
     });
 }
 
@@ -330,7 +457,23 @@ async function abrirRecepcion(ordenId) {
     document.getElementById("recepcionOrdenId").value = ordenId;
     document.getElementById("recepcionOrdenNumero").textContent = `OC-${numOrden}`;
     document.getElementById("recepcionProveedorNombre").textContent = provNombre;
-    document.getElementById("recepcionNumeroFactura").value = "";
+
+    // Buscar factura asociada a esta orden
+    const { data: facturaAsociada } = await supabaseClient
+        .from("facturas_compra")
+        .select("fc_numero_factura")
+        .eq("fc_oc_id_orden", ordenId)
+        .limit(1)
+        .single();
+
+    const inputFactura = document.getElementById("recepcionNumeroFactura");
+    if (facturaAsociada && facturaAsociada.fc_numero_factura) {
+        inputFactura.value = facturaAsociada.fc_numero_factura;
+        inputFactura.setAttribute("readonly", "readonly");
+    } else {
+        inputFactura.value = "";
+        inputFactura.removeAttribute("readonly");
+    }
 
     // Render reception lines
     const tbody = document.getElementById("tablaLineasRecepcion");
@@ -370,6 +513,19 @@ async function recibirOrden(ordenId, lineas) {
             icon: "warning"
         });
         return;
+    }
+
+    // Validar que ninguna cantidad recibida supere la pendiente
+    for (const linea of lineasConCantidad) {
+        const pendiente = linea.cantidadSolicitada - linea.cantidadRecibidaPrevia;
+        if (linea.cantidadRecibida > pendiente) {
+            await Swal.fire({
+                title: "Cantidad excedida",
+                text: `La cantidad recibida (${linea.cantidadRecibida}) supera la cantidad pendiente (${pendiente}) para uno de los productos.`,
+                icon: "error"
+            });
+            return;
+        }
     }
 
     // Process each line
@@ -569,7 +725,7 @@ function renderizarTablaFacturas(facturas) {
     if (!facturas || facturas.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="5" class="text-center text-muted">
+                <td colspan="6" class="text-center text-muted">
                     No hay facturas registradas
                 </td>
             </tr>`;
@@ -582,15 +738,59 @@ function renderizarTablaFacturas(facturas) {
         if (f.fc_estado_pago === "pagada") badgeClass = "badge-success";
         if (f.fc_estado_pago === "cancelada") badgeClass = "badge-danger";
 
+        // Botones de acción según estado
+        // Botón ver detalle siempre visible
+        let acciones = `<button class="btn btn-primary btn-sm btn-accion" onclick="verDetalleFactura(${f.fc_id_factura}, '${f.fc_numero_factura}')" title="Ver detalle">👁️</button> `;
+        if (f.fc_estado_pago === "pendiente") {
+            acciones += `<button class="btn btn-success btn-sm btn-accion" onclick="cambiarEstadoFactura(${f.fc_id_factura}, 'pagada')" title="Marcar como pagada">💰</button> `;
+            acciones += `<button class="btn btn-danger btn-sm btn-accion" onclick="cambiarEstadoFactura(${f.fc_id_factura}, 'cancelada')" title="Cancelar factura">❌</button>`;
+        }
+
         tbody.innerHTML += `
         <tr class="text-center">
             <td>${f.fc_numero_factura}</td>
             <td>${provNombre}</td>
             <td>${new Date(f.fc_fecha_factura).toLocaleDateString("es-CO")}</td>
-            <td>${Number(f.fc_monto_total).toLocaleString("es-CO")}</td>
+            <td>$${Number(f.fc_monto_total).toLocaleString("es-CO")}</td>
             <td><span class="badge badge-estado ${badgeClass}">${f.fc_estado_pago}</span></td>
+            <td>${acciones}</td>
         </tr>`;
     });
+}
+
+// ================= CAMBIAR ESTADO FACTURA =================
+
+async function cambiarEstadoFactura(facturaId, nuevoEstado) {
+    const textoConfirmacion = nuevoEstado === 'pagada'
+        ? '¿Marcar esta factura como pagada?'
+        : '¿Cancelar esta factura?';
+
+    const result = await Swal.fire({
+        title: textoConfirmacion,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: nuevoEstado === 'pagada' ? '#28a745' : '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: nuevoEstado === 'pagada' ? 'Sí, marcar pagada' : 'Sí, cancelar',
+        cancelButtonText: 'No'
+    });
+
+    if (!result.isConfirmed) return;
+
+    const { error } = await supabaseClient
+        .from("facturas_compra")
+        .update({ fc_estado_pago: nuevoEstado })
+        .eq("fc_id_factura", facturaId);
+
+    if (error) {
+        await Swal.fire({ title: 'Error', text: error.message, icon: 'error' });
+        return;
+    }
+
+    const textoExito = nuevoEstado === 'pagada' ? 'Factura marcada como pagada' : 'Factura cancelada';
+    await Swal.fire({ title: textoExito, icon: 'success', timer: 1500, showConfirmButton: false });
+
+    await cargarFacturas();
 }
 
 // ================= REGISTER INVOICE =================
@@ -637,7 +837,13 @@ async function cargarOrdenesEnSelectFactura() {
     const select = document.getElementById("fc_oc_id_orden");
     select.innerHTML = '<option value="">Seleccione una orden</option>';
 
-    ordenesCache.forEach(o => {
+    // Solo mostrar órdenes pendientes (estado 1) o recibida parcial (estado 2)
+    const ordenesPendientes = ordenesCache.filter(o => {
+        const estadoId = o.estado_orden_compra ? o.estado_orden_compra.eoc_id_estado : 0;
+        return estadoId === 1 || estadoId === 2;
+    });
+
+    ordenesPendientes.forEach(o => {
         const opt = document.createElement("option");
         opt.value = o.oc_id_orden;
         opt.textContent = `OC-${o.oc_numero_orden} - ${o.proveedores ? o.proveedores.prov_nombre : ""}`;
