@@ -17,26 +17,23 @@ let veterinariosCache = [];
 let clientesCache = [];
 
 // Transiciones de estado permitidas
-// 1=Programada, 2=Cancelada, 3=Finalizada, 4=Finalizada, 5=No asistió
+// 1=Programada, 2=Finalizada, 3=Cancelada, 4=No asistió
 const TRANSICIONES_ESTADO = {
-    1: [3, 2, 5],    // Programada → Cancelada, Finalizada, No asistió
-    3: [4]            // Finalizada → Finalizada
+    1: [2, 3, 4]  // Programada → Finalizada, Cancelada, No asistió
 };
 
 const COLORES_ESTADO = {
     1: '#007bff',  // Programada - Azul
-    2: '#dc3545',  // Cancelada - Rojo
-    3: '#ffc107',  // Finalizada - Amarillo
-    4: '#6c757d',  // Finalizada - Gris
-    5: '#fd7e14'   // No asistió - Naranja
+    2: '#28a745',  // Finalizada - Verde
+    3: '#dc3545',  // Cancelada - Rojo
+    4: '#fd7e14'   // No asistió - Naranja
 };
 
 const NOMBRES_ESTADO = {
     1: 'Programada',
-    2: 'Cancelada',
-    3: 'Finalizada',
-    4: 'Finalizada',
-    5: 'No asistió'
+    2: 'Finalizada',
+    3: 'Cancelada',
+    4: 'No asistió'
 };
 
 // ================= INITIALIZATION =================
@@ -128,7 +125,7 @@ async function cargarEstadosCita() {
 async function cargarVeterinarios() {
     const { data, error } = await supabaseClient
         .from("personal_vet")
-        .select("pv_documento, pv_primer_nombre, pv_primer_apellido")
+        .select("pv_documento, pv_primer_nombre, pv_primer_apellido, info_laboral(il_cv_id_cargo)")
         .order("pv_primer_nombre");
 
     if (error) {
@@ -136,7 +133,10 @@ async function cargarVeterinarios() {
         return;
     }
 
-    veterinariosCache = data || [];
+    veterinariosCache = (data || []).map(vet => ({
+        ...vet,
+        rolId: vet.info_laboral && vet.info_laboral.length > 0 ? vet.info_laboral[0].il_cv_id_cargo : null
+    }));
 
     const selects = [
         "filtroVeterinario",
@@ -165,6 +165,36 @@ async function cargarVeterinarios() {
             select.appendChild(opt);
         });
     });
+}
+
+// Mapeo: tipo_cita_id → roles permitidos para atender
+// 5=Grooming → Groomer(5)
+// 6=Cirugía → Cirujano(7)
+// 3=Vacunación → Auxiliar(3), Practicante(4)
+// Resto → Médico(1), Vet jefe(2), Auxiliar(3), Practicante(4), Cirujano(7) (todos menos Admin y Groomer)
+const ROLES_POR_TIPO_CITA = {
+    5: [5],           // Grooming → Groomer
+    6: [7],           // Cirugía → Cirujano
+    3: [3, 4],        // Vacunación → Auxiliar, Practicante
+    default: [1, 2, 3, 4, 7]  // Resto → todos menos Admin(6) y Groomer(5)
+};
+
+function filtrarVeterinariosPorTipoCita(tipoCitaId) {
+    const selectVet = document.getElementById("ct_pv_documento");
+    if (!selectVet) return;
+
+    const rolesPermitidos = ROLES_POR_TIPO_CITA[tipoCitaId] || ROLES_POR_TIPO_CITA.default;
+
+    selectVet.innerHTML = '<option value="">Seleccione</option>';
+
+    veterinariosCache
+        .filter(vet => vet.rolId && rolesPermitidos.includes(vet.rolId))
+        .forEach(vet => {
+            const opt = document.createElement("option");
+            opt.value = vet.pv_documento;
+            opt.textContent = `${vet.pv_primer_nombre} ${vet.pv_primer_apellido}`;
+            selectVet.appendChild(opt);
+        });
 }
 
 async function cargarClientes() {
@@ -368,6 +398,13 @@ async function fetchEventos(fetchInfo, successCallback, failureCallback) {
 }
 
 function onDateClick(info) {
+    const fechaClick = info.dateStr.includes('T') ? info.dateStr.split('T')[0] : info.dateStr;
+    const validacion = validarFechaNoPasada(fechaClick);
+    if (!validacion.valido) {
+        Swal.fire({ title: "Fecha no válida", text: validacion.mensaje, icon: "info" });
+        return;
+    }
+
     Swal.fire({
         title: '¿Qué desea crear?',
         icon: 'question',
@@ -469,6 +506,13 @@ async function onEventDrop(info) {
     const newFecha = newStart.toISOString().split('T')[0];
     const newHoraInicio = newStart.toTimeString().substring(0, 5);
     const newHoraFin = newEnd ? newEnd.toTimeString().substring(0, 5) : calcularHoraFin(newHoraInicio, props.tipo_cita ? props.tipo_cita.tc_duracion_minutos : 30);
+
+    const validacionFecha = validarFechaNoPasada(newFecha);
+    if (!validacionFecha.valido) {
+        await Swal.fire({ title: "Fecha no válida", text: "No se puede reprogramar a una fecha pasada", icon: "info" });
+        info.revert();
+        return;
+    }
 
     // Verify availability
     const conflicto = await verificarDisponibilidad(
@@ -661,6 +705,12 @@ async function guardarCita(e) {
         ct_notas: document.getElementById("ct_notas").value.trim() || null
     };
 
+    const validacionFecha = validarFechaNoPasada(citaData.ct_fecha);
+    if (!validacionFecha.valido) {
+        await Swal.fire({ title: "Fecha no válida", text: validacionFecha.mensaje, icon: "warning" });
+        return;
+    }
+
     if (idCita) {
         await actualizarCita(parseInt(idCita), citaData);
     } else {
@@ -776,7 +826,7 @@ async function cambiarEstadoCita(citaId, nuevoEstado) {
     }
 
     // If cancelling, confirm
-    if (nuevoEstado === 2) {
+    if (nuevoEstado === 3) {
         const result = await Swal.fire({
             title: "¿Cancelar esta cita?",
             text: "Se liberará el horario para nuevas reservas.",
@@ -806,11 +856,6 @@ async function cambiarEstadoCita(citaId, nuevoEstado) {
         timer: 2000,
         showConfirmButton: false
     });
-
-    // If Generar Consulta, open the consultation modal
-    if (nuevoEstado === 3) {
-        await abrirModalConsultaDesdeCita(citaId);
-    }
 
     calendarInstance.refetchEvents();
     actualizarResumenDia();
@@ -870,7 +915,7 @@ async function calcularSlotsDisponibles(vetDoc, fecha, duracionMin) {
         .select("ct_hora_inicio, ct_hora_fin")
         .eq("ct_pv_documento", vetDoc)
         .eq("ct_fecha", fecha)
-        .in("ct_eci_id_estado_cita", [1, 3]);
+        .in("ct_eci_id_estado_cita", [1]);
 
     // 5. Get bloqueos for vet+date (include null vet = all)
     const { data: bloqueosData } = await supabaseClient
@@ -957,7 +1002,7 @@ async function verificarDisponibilidad(vetDoc, fecha, horaInicio, horaFin, exclu
         .select("ct_id_cita")
         .eq("ct_pv_documento", vetDoc)
         .eq("ct_fecha", fecha)
-        .in("ct_eci_id_estado_cita", [1, 3])
+        .in("ct_eci_id_estado_cita", [1])
         .lt("ct_hora_inicio", horaFin)
         .gt("ct_hora_fin", horaInicio);
 
@@ -1064,7 +1109,7 @@ async function actualizarResumenDia() {
     const horaActual = `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
 
     const proximaCita = citas.find(c =>
-        (c.ct_eci_id_estado_cita === 1 || c.ct_eci_id_estado_cita === 3) &&
+        c.ct_eci_id_estado_cita === 1 &&
         c.ct_hora_inicio.substring(0, 5) > horaActual
     );
 
@@ -1134,7 +1179,7 @@ function renderizarCitasDelDia(citas) {
         const transiciones = TRANSICIONES_ESTADO[cita.ct_eci_id_estado_cita] || [];
         let botonesHTML = '';
         transiciones.forEach(nuevoEstado => {
-            const btnColor = nuevoEstado === 2 ? 'btn-danger' : nuevoEstado === 5 ? 'btn-warning' : 'btn-success';
+            const btnColor = nuevoEstado === 3 ? 'btn-danger' : nuevoEstado === 4 ? 'btn-warning' : 'btn-success';
             botonesHTML += `<button class="btn ${btnColor} btn-sm btn-cambiar-estado" data-cita-id="${cita.ct_id_cita}" data-nuevo-estado="${nuevoEstado}">${NOMBRES_ESTADO[nuevoEstado]}</button>`;
         });
 
@@ -1175,6 +1220,19 @@ function renderizarCitasDelDia(citas) {
     });
 }
 
+
+// ================= INICIAR CONSULTA =================
+
+function construirUrlIniciarConsulta(cita) {
+    const params = new URLSearchParams({
+        citaId: cita.ct_id_cita,
+        clienteId: cita.ct_dc_id_cliente,
+        mascotaId: cita.ct_dm_id_mascota,
+        vetDoc: cita.ct_pv_documento,
+        fecha: cita.ct_fecha
+    });
+    return `mascotas.html?${params.toString()}`;
+}
 
 // ================= DETALLE CITA MODAL =================
 
@@ -1227,12 +1285,37 @@ async function mostrarDetalleCita(citaId) {
 
     transiciones.forEach(nuevoEstado => {
         const btn = document.createElement("button");
-        const btnClass = nuevoEstado === 2 ? 'btn-danger' : nuevoEstado === 5 ? 'btn-warning' : 'btn-success';
+        const btnClass = nuevoEstado === 3 ? 'btn-danger' : nuevoEstado === 4 ? 'btn-warning' : 'btn-success';
         btn.className = `btn ${btnClass} btn-sm`;
         btn.textContent = NOMBRES_ESTADO[nuevoEstado];
         btn.addEventListener("click", () => cambiarEstadoCita(cita.ct_id_cita, nuevoEstado));
         accionesContainer.appendChild(btn);
     });
+
+    // Handle "Iniciar Consulta" / "Ver Consulta" button
+    const btnIniciarConsulta = document.getElementById("btnIniciarConsulta");
+    if (cita.ct_cm_id_consulta) {
+        // Already has a consultation linked — show "Ver Consulta"
+        btnIniciarConsulta.textContent = "Ver Consulta";
+        btnIniciarConsulta.className = "btn btn-info btn-sm";
+        btnIniciarConsulta.style.display = "inline-block";
+        btnIniciarConsulta.onclick = () => {
+            window.location.href = `mascotas.html?consultaId=${cita.ct_cm_id_consulta}`;
+        };
+    } else if (cita.ct_eci_id_estado_cita === 1) {
+        // Only show for Programada state
+        btnIniciarConsulta.textContent = "Iniciar Consulta";
+        btnIniciarConsulta.className = "btn btn-primary btn-sm";
+        btnIniciarConsulta.style.display = "inline-block";
+        btnIniciarConsulta.onclick = () => {
+            const url = construirUrlIniciarConsulta(cita);
+            showLoader();
+            setTimeout(() => { window.location.href = url; }, 800);
+        };
+    } else {
+        // Hide button for other states without consultation
+        btnIniciarConsulta.style.display = "none";
+    }
 
     // Store cita data for edit button
     document.getElementById("btnEditarCita").dataset.citaId = cita.ct_id_cita;
@@ -1532,7 +1615,7 @@ async function crearBloqueo(e) {
         .from("citas")
         .select("ct_id_cita, ct_hora_inicio, ct_hora_fin, datos_cliente(dc_nombre)")
         .eq("ct_fecha", fecha)
-        .in("ct_eci_id_estado_cita", [1, 3])
+        .in("ct_eci_id_estado_cita", [1])
         .lt("ct_hora_inicio", horaFin)
         .gt("ct_hora_fin", horaInicio);
 
@@ -2029,6 +2112,33 @@ function manejarErrorSupabase(error) {
     });
 }
 
+// ================= DATE VALIDATION =================
+
+function obtenerFechaHoyBogota() {
+    // Get current date in America/Bogota timezone
+    const now = new Date();
+    const bogotaOffset = -5 * 60; // UTC-5 in minutes
+    const localOffset = now.getTimezoneOffset();
+    const bogotaTime = new Date(now.getTime() + (localOffset + bogotaOffset) * 60000);
+    return bogotaTime.toISOString().split('T')[0];
+}
+
+function validarFechaNoPasada(fechaStr) {
+    const hoy = obtenerFechaHoyBogota();
+    if (fechaStr < hoy) {
+        return { valido: false, mensaje: "No se pueden programar citas en fechas pasadas" };
+    }
+    return { valido: true, mensaje: "" };
+}
+
+function configurarMinFecha() {
+    const hoy = obtenerFechaHoyBogota();
+    const fechaInput = document.getElementById("ct_fecha");
+    if (fechaInput) {
+        fechaInput.setAttribute("min", hoy);
+    }
+}
+
 // ================= EVENT LISTENERS =================
 
 function inicializarEventListeners() {
@@ -2053,10 +2163,18 @@ function inicializarEventListeners() {
     // Tipo cita change → pre-select vet
     document.getElementById("ct_tc_id_tipo_cita").addEventListener("change", function () {
         const tipoId = parseInt(this.value);
+
+        // Filter veterinarios by role based on appointment type
+        if (tipoId) {
+            filtrarVeterinariosPorTipoCita(tipoId);
+        }
+
+        // Pre-select vet if tipo_cita has a default one
         const tipoCita = tiposCitaCache.find(tc => tc.tc_id_tipo_cita === tipoId);
         if (tipoCita && tipoCita.tc_pv_documento) {
             document.getElementById("ct_pv_documento").value = tipoCita.tc_pv_documento;
         }
+
         // Reload slots if vet and date are set
         cargarSlotsDisponibles();
     });
@@ -2142,6 +2260,7 @@ function inicializarEventListeners() {
         if (!document.getElementById("ct_id_cita").value) {
             document.getElementById("modalCitaLabel").textContent = "Nueva Cita";
         }
+        configurarMinFecha();
     });
 
     // Reset cita form when modal closes

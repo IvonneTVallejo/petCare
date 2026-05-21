@@ -115,15 +115,23 @@
                         <!-- COLUMNA IZQUIERDA: PROPIETARIO -->
                         <div class="col-12 col-lg-3">
                             <div id="fichaPaciente" class="card ficha-paciente">
-                                <div class="ficha-header">
+                                <div class="ficha-header d-flex justify-content-between align-items-center">
                                     Información tutor
+                                    <button type="button" id="btnEditarTutor" class="btn btn-sm btn-outline-light" onclick="toggleEditarTutor()" title="Editar tutor">
+                                        ✏️
+                                    </button>
                                 </div>
                                 <div class="ficha-body">
                                     <p><b>Documento:</b> <span id="fp_documento"></span></p>
-                                    <p><b>Nombre:</b> <span id="fp_nombre"></span></p>
-                                    <p><b>Teléfono:</b> <span id="fp_telefono"></span></p>
-                                    <p><b>Dirección:</b> <span id="fp_direccion"></span></p>
-                                    <p><b>Email:</b> <span id="fp_email"></span></p>
+                                    <p><b>Nombre:</b> <span id="fp_nombre"></span><input type="text" id="fp_nombre_input" class="form-control form-control-sm d-none"></p>
+                                    <p><b>Teléfono:</b> <span id="fp_telefono"></span><input type="text" id="fp_telefono_input" class="form-control form-control-sm d-none"></p>
+                                    <p><b>Dirección:</b> <span id="fp_direccion"></span><input type="text" id="fp_direccion_input" class="form-control form-control-sm d-none"></p>
+                                    <p><b>Email:</b> <span id="fp_email"></span><input type="email" id="fp_email_input" class="form-control form-control-sm d-none"></p>
+
+                                    <div id="botonesEdicionTutor" class="d-none mt-2">
+                                        <button type="button" class="btn btn-success btn-sm" onclick="guardarEdicionTutor()">Guardar</button>
+                                        <button type="button" class="btn btn-secondary btn-sm" onclick="cancelarEdicionTutor()">Cancelar</button>
+                                    </div>
 
                                     <button type="button" id="btnCrearMascota" class="btn btn-success btn-sm" disabled>
                                         Agregar mascota
@@ -343,6 +351,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js"
         integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
         crossorigin="anonymous"></script>
+    <script src="../js/auth-guard.js"></script>
     <script src="../js/script.js"></script>
     <script src="../js/pacientes.js"></script>
     <link rel="stylesheet" href="../css/loader.css">

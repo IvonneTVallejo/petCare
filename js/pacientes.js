@@ -458,3 +458,92 @@ async function seleccionarCliente(id) {
 
     $('#modalBuscarPaciente').modal('hide');
 }
+
+
+// ================= EDICIÓN DE TUTOR =================
+
+function toggleEditarTutor() {
+    // Show inputs with current values
+    const campos = ['nombre', 'telefono', 'direccion', 'email'];
+    campos.forEach(campo => {
+        const span = document.getElementById(`fp_${campo}`);
+        const input = document.getElementById(`fp_${campo}_input`);
+        input.value = span.textContent;
+        span.classList.add('d-none');
+        input.classList.remove('d-none');
+    });
+
+    // Show save/cancel buttons, hide edit button
+    document.getElementById('botonesEdicionTutor').classList.remove('d-none');
+    document.getElementById('btnEditarTutor').classList.add('d-none');
+}
+
+function validarDatosTutor(datos) {
+    const errores = [];
+    if (!datos.nombre || !datos.nombre.trim()) errores.push({ campo: 'nombre', mensaje: 'El nombre es obligatorio' });
+    if (!datos.telefono || !/^\d{7,15}$/.test(datos.telefono)) errores.push({ campo: 'telefono', mensaje: 'Teléfono inválido (7-15 dígitos)' });
+    if (!datos.direccion || !datos.direccion.trim()) errores.push({ campo: 'direccion', mensaje: 'La dirección es obligatoria' });
+    if (!datos.correo || !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(datos.correo)) errores.push({ campo: 'correo', mensaje: 'Correo inválido' });
+    return { valido: errores.length === 0, errores };
+}
+
+async function guardarEdicionTutor() {
+    const datos = {
+        nombre: document.getElementById('fp_nombre_input').value.trim(),
+        telefono: document.getElementById('fp_telefono_input').value.trim(),
+        direccion: document.getElementById('fp_direccion_input').value.trim(),
+        correo: document.getElementById('fp_email_input').value.trim()
+    };
+
+    const validacion = validarDatosTutor(datos);
+    if (!validacion.valido) {
+        const mensajes = validacion.errores.map(e => e.mensaje).join('\n');
+        await Swal.fire({ title: "Error de validación", text: mensajes, icon: "error" });
+        return;
+    }
+
+    const payload = {
+        dc_nombre: datos.nombre,
+        dc_telefono: datos.telefono,
+        dc_direccion: datos.direccion,
+        dc_correo: datos.correo
+    };
+
+    const { error } = await supabaseClient
+        .from("datos_cliente")
+        .update(payload)
+        .eq("dc_id_cliente", clienteId);
+
+    if (error) {
+        await Swal.fire({ title: "Error al actualizar", text: error.message, icon: "error" });
+        return;
+    }
+
+    await Swal.fire({ title: "Datos actualizados", icon: "success", timer: 1500, showConfirmButton: false });
+
+    // Refresh ficha with new values
+    document.getElementById('fp_nombre').textContent = datos.nombre;
+    document.getElementById('fp_telefono').textContent = datos.telefono;
+    document.getElementById('fp_direccion').textContent = datos.direccion;
+    document.getElementById('fp_email').textContent = datos.correo;
+
+    cancelarEdicionTutor();
+}
+
+function cancelarEdicionTutor() {
+    const campos = ['nombre', 'telefono', 'direccion', 'email'];
+    campos.forEach(campo => {
+        const span = document.getElementById(`fp_${campo}`);
+        const input = document.getElementById(`fp_${campo}_input`);
+        span.classList.remove('d-none');
+        input.classList.add('d-none');
+    });
+
+    document.getElementById('botonesEdicionTutor').classList.add('d-none');
+    document.getElementById('btnEditarTutor').classList.remove('d-none');
+}
+
+// Export for testing
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { validarDatosTutor };
+}

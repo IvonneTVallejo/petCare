@@ -1,6 +1,21 @@
 let mascota = null;
 let consultaActualId = null;
 
+// ================= QUERY PARAMS FROM AGENDA =================
+
+function leerParametrosCita() {
+    const params = new URLSearchParams(window.location.search);
+    const citaId = params.get('citaId');
+    if (!citaId) return null;
+    return {
+        citaId: parseInt(citaId),
+        clienteId: parseInt(params.get('clienteId')),
+        mascotaId: parseInt(params.get('mascotaId')),
+        vetDoc: parseInt(params.get('vetDoc')),
+        fecha: params.get('fecha')
+    };
+}
+
 
 function limpiarCamposConsulta() {
     document.getElementById("formConsulta").reset();
@@ -22,6 +37,15 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 document.addEventListener("DOMContentLoaded", async () => {
+    
+    // Check if coming from agenda with cita params
+    const citaParams = leerParametrosCita();
+    if (citaParams) {
+        // Store citaId for later use when saving consultation
+        localStorage.setItem('citaIdPendiente', citaParams.citaId);
+        // Use mascotaId from query params
+        localStorage.setItem("mascotaId", citaParams.mascotaId);
+    }
 
     const mascotaId = localStorage.getItem("mascotaId");
     if (!mascotaId) return;
@@ -61,6 +85,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     btnGenerarConsulta.disabled = false;
     cargarConsultas();
+    
+    // If coming from agenda, auto-open consultation modal
+    if (citaParams) {
+        document.getElementById("dm_dc_id_cliente").value = mascota.dm_dc_id_cliente;
+        document.getElementById("dm_id_mascota").value = mascota.dm_id_mascota;
+        limpiarCamposConsulta();
+        $('#modalRegistroConsulta').modal('show');
+    }
 });
 
 
@@ -116,6 +148,20 @@ document.getElementById("formConsulta")
             // Task 6.4: Descontar inventario después de guardar consulta
             if (medicamentosSeleccionados.length > 0) {
                 await descontarInventarioConsulta(idConsulta, medicamentosSeleccionados);
+            }
+            
+            // If there's a pending citaId from agenda, update the cita to Finalizada
+            const citaIdPendiente = localStorage.getItem('citaIdPendiente');
+            if (citaIdPendiente) {
+                await supabaseClient
+                    .from("citas")
+                    .update({ 
+                        ct_eci_id_estado_cita: 2,
+                        ct_cm_id_consulta: idConsulta
+                    })
+                    .eq("ct_id_cita", parseInt(citaIdPendiente));
+                
+                localStorage.removeItem('citaIdPendiente');
             }
 
             await Swal.fire({
@@ -262,6 +308,8 @@ async function cargarConsultas() {
         cm_id_consulta,
         cm_fecha_consulta,
         cm_motivo_consulta,
+        cm_ec_id_estado,
+        cm_formula,
         estado_consulta!consulta_medica_cm_ec_id_estado_fkey (
             ec_estado_consulta
         )
@@ -293,6 +341,8 @@ async function cargarConsultas() {
             }
         }
 
+        const botonFinalizar = renderBotonFinalizar(c);
+
         tbody.innerHTML += `
         <tr class="text-center align-middle">
             <td>
@@ -315,9 +365,11 @@ async function cargarConsultas() {
                     type="button"
                     class="btn btn-info btn-accion btn-formular"
                     data-id="${c.cm_id_consulta}"
-                    title="Formular">
+                    title="Formular"
+                    ${c.cm_formula ? 'style="display:none;"' : ''}>
                     📄
                 </button>
+                ${botonFinalizar}
             </td>
         </tr>
     `;
@@ -442,6 +494,8 @@ document.addEventListener("click", async function (e) {
             .select("*")
             .eq("cm_id_consulta", id)
             .single();
+
+        consultaActualId = parseInt(id);
 
         // =========================
         // 🔹 ESTADO
@@ -1167,4 +1221,395 @@ async function rollbackDescuentos(descuentosRealizados, idConsulta) {
             console.error("Error en rollback para producto " + descuento.nombre, rollbackErr);
         }
     }
+}
+
+
+// ================= FÓRMULA MÉDICA =================
+
+async function abrirModalFormula(consultaId) {
+    document.getElementById("formula_consulta_id").value = consultaId;
+    const { data } = await supabaseClient
+        .from("consulta_medica")
+        .select("cm_formula")
+        .eq("cm_id_consulta", consultaId)
+        .single();
+    document.getElementById("formula_texto").value = data?.cm_formula || "";
+    $('#modalFormula').modal('show');
+}
+
+document.getElementById("btnGuardarFormula").addEventListener("click", async function () {
+    const consultaId = document.getElementById("formula_consulta_id").value;
+    const formula = document.getElementById("formula_texto").value.trim();
+
+    const { error } = await supabaseClient
+        .from("consulta_medica")
+        .update({ cm_formula: formula })
+        .eq("cm_id_consulta", parseInt(consultaId));
+
+    if (error) {
+        await Swal.fire({ title: "Error", text: error.message, icon: "error" });
+        return;
+    }
+
+    await Swal.fire({ title: "Fórmula guardada", icon: "success", timer: 1500, showConfirmButton: false });
+    $('#modalFormula').modal('hide');
+});
+
+// Wire the "Formular" button in the consultations table
+document.addEventListener("click", function (e) {
+    if (e.target.classList.contains("btn-formular")) {
+        const consultaId = e.target.dataset.id;
+        if (consultaId) abrirModalFormula(parseInt(consultaId));
+    }
+});
+
+// ================= SEGUIMIENTOS =================
+
+let seguimientoConsultaId = null;
+
+function truncarTexto(texto, max) {
+    if (!texto || typeof texto !== 'string') return '';
+    if (texto.length <= max) return texto;
+    return texto.substring(0, max) + '...';
+}
+
+async function abrirModalSeguimientos(consultaId) {
+    seguimientoConsultaId = consultaId;
+
+    // Check if consultation is finalized - hide "Nuevo Seguimiento" button if so
+    const { data: consultaData } = await supabaseClient
+        .from("consulta_medica")
+        .select("cm_ec_id_estado")
+        .eq("cm_id_consulta", consultaId)
+        .single();
+
+    const btnNuevoSeg = document.querySelector('#modalSeguimientos .modal-footer .btn-success');
+    if (consultaData && consultaData.cm_ec_id_estado === 2) {
+        if (btnNuevoSeg) btnNuevoSeg.style.display = 'none';
+    } else {
+        if (btnNuevoSeg) btnNuevoSeg.style.display = 'inline-block';
+    }
+
+    const { data, error } = await supabaseClient
+        .from("seguimiento")
+        .select("s_id_seguimiento, s_seguimiento, s_fecha_seguimiento")
+        .eq("s_cm_id_consulta", consultaId)
+        .order("s_fecha_seguimiento", { ascending: false });
+
+    const tbody = document.getElementById("tablaSeguimientos");
+
+    if (error || !data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted">No hay seguimientos registrados</td></tr>`;
+    } else {
+        tbody.innerHTML = "";
+        data.forEach(s => {
+            const fecha = s.s_fecha_seguimiento || "-";
+            const texto = truncarTexto(s.s_seguimiento, 50);
+            tbody.innerHTML += `
+                <tr class="text-center">
+                    <td>${fecha}</td>
+                    <td>${texto}</td>
+                    <td>
+                        <button type="button" class="btn btn-success btn-sm btn-ver-seguimiento" data-id="${s.s_id_seguimiento}">
+                            Ver detalle
+                        </button>
+                    </td>
+                </tr>`;
+        });
+    }
+
+    $('#modalSeguimientos').modal('show');
+}
+
+async function verDetalleSeguimiento(seguimientoId) {
+    const { data: seg } = await supabaseClient
+        .from("seguimiento")
+        .select("*")
+        .eq("s_id_seguimiento", seguimientoId)
+        .single();
+
+    if (!seg) return;
+
+    document.getElementById("detSeg_fecha").textContent = seg.s_fecha_seguimiento || "-";
+    document.getElementById("detSeg_texto").textContent = seg.s_seguimiento || "";
+    document.getElementById("detSeg_formula").textContent = seg.s_formula || "Sin fórmula";
+
+    // Load adjuntos
+    const { data: adjuntos } = await supabaseClient
+        .from("adjuntos")
+        .select("a_id_adjunto, a_nombre_archivo, a_tipo_archivo, a_base64")
+        .eq("a_s_id_seguimiento", seguimientoId);
+
+    const adjuntosContainer = document.getElementById("detSeg_adjuntos");
+    if (!adjuntos || adjuntos.length === 0) {
+        adjuntosContainer.innerHTML = '<p class="text-muted">Sin adjuntos</p>';
+    } else {
+        let html = '<ul class="list-unstyled">';
+        adjuntos.forEach(a => {
+            html += `<li class="mb-1">
+                <a href="data:${a.a_tipo_archivo};base64,${a.a_base64}" download="${a.a_nombre_archivo}" class="btn btn-sm btn-outline-success">
+                    📎 ${a.a_nombre_archivo}
+                </a>
+            </li>`;
+        });
+        html += '</ul>';
+        adjuntosContainer.innerHTML = html;
+    }
+
+    $('#modalDetalleSeguimiento').modal('show');
+}
+
+// Wire "Ver detalle" button in seguimientos table
+document.addEventListener("click", function (e) {
+    if (e.target.classList.contains("btn-ver-seguimiento")) {
+        const id = e.target.dataset.id;
+        if (id) verDetalleSeguimiento(parseInt(id));
+    }
+});
+
+// Wire "Ver Seguimientos" button in consultation detail modal
+document.getElementById("btnVerSeguimientos").addEventListener("click", function () {
+    if (consultaActualId) {
+        abrirModalSeguimientos(consultaActualId);
+    }
+});
+
+// Fix: Restore scroll when nested modals close (Bootstrap removes modal-open from body)
+$('#modalSeguimientos').on('hidden.bs.modal', function () {
+    if ($('.modal.show').length > 0) {
+        $('body').addClass('modal-open');
+    }
+});
+
+$('#modalDetalleSeguimiento').on('hidden.bs.modal', function () {
+    if ($('.modal.show').length > 0) {
+        $('body').addClass('modal-open');
+    }
+});
+
+$('#modalNuevoSeguimiento').on('hidden.bs.modal', function () {
+    if ($('.modal.show').length > 0) {
+        $('body').addClass('modal-open');
+    }
+});
+
+function abrirModalNuevoSeguimiento() {
+    // Block if consultation is finalized
+    document.getElementById("nuevoSeg_texto").value = "";
+    document.getElementById("nuevoSeg_formula").value = "";
+    document.getElementById("nuevoSeg_adjuntos").value = "";
+    archivosSeleccionados = []; // Clear file list
+    renderListaArchivos();
+    $('#modalNuevoSeguimiento').modal('show');
+}
+
+// Validate files on selection (reject executables immediately)
+let archivosSeleccionados = []; // Array to store valid files
+
+document.getElementById("nuevoSeg_adjuntos").addEventListener("change", function() {
+    const archivos = this.files;
+    for (let i = 0; i < archivos.length; i++) {
+        const validacion = validarArchivoAdjunto(archivos[i]);
+        if (!validacion.valido) {
+            Swal.fire({ title: "Archivo no permitido", text: validacion.error, icon: "error" });
+        } else {
+            // Add valid file to the list (avoid duplicates by name)
+            const yaExiste = archivosSeleccionados.some(f => f.name === archivos[i].name && f.size === archivos[i].size);
+            if (!yaExiste) {
+                archivosSeleccionados.push(archivos[i]);
+            }
+        }
+    }
+    this.value = ""; // Clear input so user can select more files
+    renderListaArchivos();
+});
+
+function renderListaArchivos() {
+    const container = document.getElementById("listaArchivosSeleccionados");
+    if (!archivosSeleccionados || archivosSeleccionados.length === 0) {
+        container.innerHTML = '';
+        container.style.display = 'none';
+        return;
+    }
+    
+    container.style.display = 'block';
+    let html = '';
+    archivosSeleccionados.forEach((file, idx) => {
+        const extension = file.name.split('.').pop().toUpperCase();
+        const tamano = (file.size / 1024).toFixed(1);
+        html += `
+            <div class="d-flex align-items-center justify-content-between mb-1" style="font-size:12px;">
+                <span>📎 <strong>${file.name}</strong> <small class="text-muted">(.${extension} - ${tamano} KB)</small></span>
+                <button type="button" class="btn btn-sm btn-danger btn-eliminar-archivo" data-idx="${idx}" style="padding:0px 5px; font-size:10px; line-height:1.4;">✕</button>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+    
+    // Wire delete buttons
+    container.querySelectorAll(".btn-eliminar-archivo").forEach(btn => {
+        btn.addEventListener("click", function() {
+            const idx = parseInt(this.dataset.idx);
+            archivosSeleccionados.splice(idx, 1);
+            renderListaArchivos();
+        });
+    });
+}
+
+function validarArchivoAdjunto(file) {
+    const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
+    if (file.size > MAX_SIZE) {
+        return { valido: false, error: `El archivo "${file.name}" excede 5 MB` };
+    }
+    // Block executable files
+    const extensionesProhibidas = ['.exe', '.bat', '.cmd', '.msi', '.com', '.scr', '.pif', '.vbs', '.js', '.ws', '.wsf'];
+    const tiposProhibidos = ['application/x-msdownload', 'application/x-msdos-program', 'application/x-executable'];
+    const extension = '.' + file.name.split('.').pop().toLowerCase();
+    if (extensionesProhibidas.includes(extension)) {
+        return { valido: false, error: `No se permiten archivos ejecutables (${file.name})` };
+    }
+    if (tiposProhibidos.includes(file.type)) {
+        return { valido: false, error: `No se permiten archivos ejecutables (${file.name})` };
+    }
+    return { valido: true, error: null };
+}
+
+function convertirArchivoABase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            const base64 = reader.result.split(',')[1];
+            resolve(base64);
+        };
+        reader.onerror = () => reject(new Error(`Error al procesar archivo "${file.name}"`));
+        reader.readAsDataURL(file);
+    });
+}
+
+function validarTextoSeguimiento(texto) {
+    if (!texto || typeof texto !== 'string' || !texto.trim()) {
+        return { valido: false, error: 'El campo seguimiento es obligatorio' };
+    }
+    return { valido: true, error: null };
+}
+
+async function guardarSeguimiento() {
+    const texto = document.getElementById("nuevoSeg_texto").value;
+    const formula = document.getElementById("nuevoSeg_formula").value.trim();
+
+    // Verify consultaId is set
+    if (!seguimientoConsultaId) {
+        await Swal.fire({ title: "Error", text: "No se ha seleccionado una consulta. Cierre y vuelva a abrir los seguimientos.", icon: "error" });
+        return;
+    }
+
+    // Validate text
+    const validacionTexto = validarTextoSeguimiento(texto);
+    if (!validacionTexto.valido) {
+        await Swal.fire({ title: "Error", text: validacionTexto.error, icon: "error" });
+        return;
+    }
+
+    // Insert seguimiento
+    const nuevoSeguimiento = {
+        s_cm_id_consulta: seguimientoConsultaId,
+        s_seguimiento: texto.trim(),
+        s_formula: formula || null,
+        s_fecha_seguimiento: new Date().toISOString().split('T')[0]
+    };
+
+    const { data: segData, error: segError } = await supabaseClient
+        .from("seguimiento")
+        .insert(nuevoSeguimiento)
+        .select("s_id_seguimiento")
+        .single();
+
+    if (segError) {
+        await Swal.fire({ title: "Error", text: segError.message, icon: "error" });
+        return;
+    }
+
+    // Insert adjuntos from archivosSeleccionados array
+    if (archivosSeleccionados.length > 0) {
+        try {
+            for (let i = 0; i < archivosSeleccionados.length; i++) {
+                const file = archivosSeleccionados[i];
+                const base64 = await convertirArchivoABase64(file);
+                const adjunto = {
+                    a_s_id_seguimiento: segData.s_id_seguimiento,
+                    a_nombre_archivo: file.name,
+                    a_tipo_archivo: file.type,
+                    a_base64: base64
+                };
+                const { error: adjError } = await supabaseClient
+                    .from("adjuntos")
+                    .insert(adjunto);
+                if (adjError) throw new Error(adjError.message);
+            }
+        } catch (err) {
+            await Swal.fire({ title: "Advertencia", text: "Seguimiento guardado pero error en adjuntos: " + err.message, icon: "warning" });
+            $('#modalNuevoSeguimiento').modal('hide');
+            archivosSeleccionados = [];
+            renderListaArchivos();
+            await abrirModalSeguimientos(seguimientoConsultaId);
+            return;
+        }
+    }
+
+    await Swal.fire({ title: "Seguimiento guardado", icon: "success", timer: 1500, showConfirmButton: false });
+    $('#modalNuevoSeguimiento').modal('hide');
+    archivosSeleccionados = [];
+    renderListaArchivos();
+    await abrirModalSeguimientos(seguimientoConsultaId);
+}
+
+// ================= FINALIZAR CONSULTA DESDE TABLA =================
+
+function puedeFinalizarConsulta(estadoActual) {
+    return estadoActual === 1;
+}
+
+function renderBotonFinalizar(consulta) {
+    if (consulta.cm_ec_id_estado === 1) {
+        return `<button type="button" class="btn btn-warning btn-accion btn-finalizar-consulta" data-id="${consulta.cm_id_consulta}" title="Finalizar consulta">🔒</button>`;
+    }
+    return '';
+}
+
+async function finalizarConsultaDesdeTabla(consultaId) {
+    const result = await Swal.fire({
+        title: "¿Finalizar consulta?",
+        text: "Esta acción cambiará el estado a Finalizada.",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "Sí, finalizar",
+        cancelButtonText: "Cancelar"
+    });
+    if (!result.isConfirmed) return;
+
+    const { error } = await supabaseClient
+        .from("consulta_medica")
+        .update({ cm_ec_id_estado: 2 })
+        .eq("cm_id_consulta", consultaId);
+
+    if (error) {
+        await Swal.fire({ title: "Error", text: error.message, icon: "error" });
+        return;
+    }
+
+    await Swal.fire({ title: "Consulta finalizada", icon: "success", timer: 1500, showConfirmButton: false });
+    cargarConsultas();
+}
+
+// Wire "Finalizar" button in consultations table
+document.addEventListener("click", function (e) {
+    if (e.target.classList.contains("btn-finalizar-consulta")) {
+        const consultaId = e.target.dataset.id;
+        if (consultaId) finalizarConsultaDesdeTabla(parseInt(consultaId));
+    }
+});
+
+// Export for testing
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { truncarTexto, validarArchivoAdjunto, validarTextoSeguimiento, renderBotonFinalizar, puedeFinalizarConsulta };
 }

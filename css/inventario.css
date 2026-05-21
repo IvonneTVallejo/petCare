@@ -584,6 +584,10 @@ thead th {
 }
 
 /* ===== SweetAlert Custom ===== */
+.swal2-container {
+    z-index: 99999 !important;
+}
+
 .my-swal-popup {
     width: 350px;
     font-size: 13px;

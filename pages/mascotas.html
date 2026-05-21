@@ -544,6 +544,125 @@
 
 
 
+    <!-- Modal Fórmula Médica -->
+    <div class="modal fade" id="modalFormula" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">Fórmula Médica</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="formula_consulta_id">
+                    <div class="form-group">
+                        <label class="font-weight-bold">Fórmula</label>
+                        <textarea class="form-control" id="formula_texto" rows="8" placeholder="Escriba la fórmula médica..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-success btn-sm" id="btnGuardarFormula">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Lista de Seguimientos -->
+    <div class="modal fade" id="modalSeguimientos" tabindex="-1" style="z-index: 1060;">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">Seguimientos</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-container">
+                        <table class="table table-sm table-striped table-hover align-middle mb-0">
+                            <thead class="text-center">
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Seguimiento</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaSeguimientos">
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted">No hay seguimientos registrados</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-success btn-sm" onclick="abrirModalNuevoSeguimiento()">Nuevo Seguimiento</button>
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Detalle Seguimiento -->
+    <div class="modal fade" id="modalDetalleSeguimiento" tabindex="-1" style="z-index: 1070;">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">Detalle del Seguimiento</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p><b>Fecha:</b> <span id="detSeg_fecha"></span></p>
+                    <div class="form-group">
+                        <label class="font-weight-bold">Seguimiento</label>
+                        <p id="detSeg_texto" style="white-space: pre-wrap;"></p>
+                    </div>
+                    <div class="form-group">
+                        <label class="font-weight-bold">Fórmula</label>
+                        <p id="detSeg_formula" style="white-space: pre-wrap;"></p>
+                    </div>
+                    <div class="form-group">
+                        <label class="font-weight-bold">Adjuntos</label>
+                        <div id="detSeg_adjuntos"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Nuevo Seguimiento -->
+    <div class="modal fade" id="modalNuevoSeguimiento" tabindex="-1" style="z-index: 1070;">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">Nuevo Seguimiento</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="font-weight-bold">Seguimiento <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="nuevoSeg_texto" rows="5" placeholder="Escriba el seguimiento..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="font-weight-bold">Fórmula</label>
+                        <textarea class="form-control" id="nuevoSeg_formula" rows="4" placeholder="Fórmula (opcional)..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="font-weight-bold">Adjuntos</label>
+                        <input type="file" class="form-control-file" id="nuevoSeg_adjuntos" multiple>
+                        <small class="text-muted">Máximo 5 MB por archivo. No se permiten ejecutables.</small>
+                        <div id="listaArchivosSeleccionados" style="max-height: 120px; overflow-y: auto; border: 1px solid #e6e5e5; border-radius: 4px; padding: 6px; margin-top: 8px; display: none;"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success btn-sm" onclick="guardarSeguimiento()">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Import librerias JS-->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://code.jquery.com/jquery-3.6.3.min.js"></script>
