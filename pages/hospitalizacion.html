@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <title>PetCare - Hospitalización</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://unicons.iconscout.com/release/v4.0.0/css/line.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link href="../css/inventario.css" rel="stylesheet">
+    <link href="../css/hospitalizacion.css" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Inicio menu de navegacion lateral -->
+    <nav>
+        <div class="logo-name">
+            <div class="logo-image">
+                <img src="../Images/logo.png" alt="">
+            </div>
+            <span class="logo_name">PetCare</span>
+        </div>
+        <div class="menu-items">
+            <ul class="nav-links">
+                <li>
+                    <a href="home.html" class="menu-link">
+                        <i><img src="../Images/inicio.png" class="user-icon"></i>
+                        <span class="link-name">Inicio</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="pacientes.html" class="menu-link">
+                        <i><img src="../Images/dueno-de-una-mascota.png" class="user-icon"></i>
+                        <span class="link-name">Pacientes</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="agenda.html" class="menu-link">
+                        <i><img src="../Images/agenda.png" class="user-icon"></i>
+                        <span class="link-name">Agenda</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="inventario.html" class="menu-link">
+                        <i><img src="../Images/inventario.svg" class="user-icon"></i>
+                        <span class="link-name">Inventario</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="proveedores.html" class="menu-link">
+                        <i><img src="../Images/proveedores.svg" class="user-icon"></i>
+                        <span class="link-name">Proveedores</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="compras.html" class="menu-link">
+                        <i><img src="../Images/compras.svg" class="user-icon"></i>
+                        <span class="link-name">Compras</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="ventas.html" class="menu-link">
+                        <i><img src="../Images/ventas.svg" class="user-icon"></i>
+                        <span class="link-name">Ventas</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="reportes.html" class="menu-link">
+                        <i><img src="../Images/reportes.svg" class="user-icon"></i>
+                        <span class="link-name">Reportes</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="hospitalizacion.html" class="menu-link">
+                        <i><img src="../Images/informe-medico.png" class="user-icon"></i>
+                        <span class="link-name">Hospitalización</span>
+                    </a>
+                </li>
+            </ul>
+            <ul class="logout-mode">
+                <li><a onclick="cerrarSesion()">
+                        <i><img src="../Images/cerrar-sesion.png" alt="Usuario" class="user-icon"></i>
+                        <span class="link-name">Logout</span>
+                    </a></li>
+            </ul>
+        </div>
+    </nav>
+    <!-- Fin menu de navegacion lateral -->
+
+    <!-- Inicio contenido principal -->
+    <section class="dashboard">
+        <div class="top">
+            <i class="uil uil-bars sidebar-toggle"></i>
+            <div id="usernameDisplay">
+                <img src="../Images/sesion.png" />
+            </div>
+        </div>
+        <div class="dash-content">
+            <div class="activity">
+                <div class="title">
+                    <img src="../Images/informe-medico.png" alt="Hospitalización" class="user-icon">
+                    <span class="text">HOSPITALIZACIÓN</span>
+                </div>
+
+                <!-- ========== VISTA LISTADO ========== -->
+                <div id="vistaListado">
+                    <div class="filter-row">
+                        <input type="text" class="form-control" id="buscarHospitalizacion"
+                            placeholder="Buscar por paciente o propietario...">
+                        <select class="form-control" id="filtroEstado">
+                            <option value="todas">Todas</option>
+                            <option value="activa">Activas</option>
+                            <option value="finalizada">Finalizadas</option>
+                        </select>
+                        <button type="button" class="btn btn-success" id="btnNuevaHospitalizacion"
+                            data-toggle="modal" data-target="#modalNuevaHospitalizacion">
+                            Nueva Hospitalización
+                        </button>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="table table-sm table-striped table-hover align-middle mb-0">
+                            <thead class="text-center">
+                                <tr>
+                                    <th>Paciente</th>
+                                    <th>Propietario</th>
+                                    <th>Fecha Ingreso</th>
+                                    <th>Fecha Egreso</th>
+                                    <th>Estado</th>
+                                    <th>Médico Tratante</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaHospitalizaciones">
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted">
+                                        Cargando hospitalizaciones...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ========== VISTA FICHA ========== -->
+                <div id="vistaFicha" style="display:none;">
+                    <!-- Indicador de guardado -->
+                    <div class="save-indicator" id="saveIndicator"></div>
+
+                    <!-- Botón volver -->
+                    <button type="button" class="btn btn-secondary btn-sm mb-3" id="btnVolverListado">
+                        ← Volver al listado
+                    </button>
+
+                    <!-- Header datos del paciente -->
+                    <div class="paciente-header" id="pacienteHeader">
+                        <div class="row">
+                            <div class="col-md-3"><strong>Paciente:</strong> <span id="fichaPatientName">-</span></div>
+                            <div class="col-md-2"><strong>Especie:</strong> <span id="fichaEspecie">-</span></div>
+                            <div class="col-md-2"><strong>Raza:</strong> <span id="fichaRaza">-</span></div>
+                            <div class="col-md-2"><strong>Edad:</strong> <span id="fichaEdad">-</span></div>
+                            <div class="col-md-3"><strong>Peso:</strong> <span id="fichaPeso">-</span></div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-3"><strong>Propietario:</strong> <span id="fichaPropietario">-</span></div>
+                            <div class="col-md-3"><strong>Teléfono:</strong> <span id="fichaTelefono">-</span></div>
+                            <div class="col-md-3"><strong>Fecha Ingreso:</strong> <span id="fichaFechaIngreso">-</span></div>
+                            <div class="col-md-3"><strong>Fecha Egreso:</strong> <span id="fichaFechaEgreso">-</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Pestañas Bootstrap -->
+                    <ul class="nav nav-tabs mt-3" id="fichaTab" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" id="tab-ficha" data-toggle="tab" href="#panelFicha"
+                                role="tab">Ficha de Hospitalización</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="tab-monitoreo" data-toggle="tab" href="#panelMonitoreo"
+                                role="tab">Hoja de Monitoreo</a>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content mt-3" id="fichaTabContent">
+                        <!-- ===== TAB FICHA ===== -->
+                        <div class="tab-pane fade show active" id="panelFicha" role="tabpanel">
+                            <!-- Tabla de Medicamentos -->
+                            <h5>Medicamentos</h5>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered tabla-medicamentos" id="tablaMedicamentos">
+                                    <thead>
+                                        <tr>
+                                            <th>Medicamento</th>
+                                            <th>Dosis</th>
+                                            <th>Vía</th>
+                                            <th>ML</th>
+                                            <th>Lun</th>
+                                            <th>Mar</th>
+                                            <th>Mié</th>
+                                            <th>Jue</th>
+                                            <th>Vie</th>
+                                            <th>Sáb</th>
+                                            <th>Dom</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="bodyMedicamentos">
+                                    </tbody>
+                                </table>
+                            </div>
+                            <button type="button" class="btn btn-success btn-sm" id="btnAgregarMedicamento">
+                                + Agregar Medicamento
+                            </button>
+
+                            <!-- Campos adicionales -->
+                            <div class="campos-adicionales mt-4">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Hidratación</label>
+                                            <textarea class="form-control campo-autoguardado" id="campoHidratacion"
+                                                rows="2" data-campo="h_hidratacion"></textarea>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Medicamentos Adicionales</label>
+                                            <textarea class="form-control campo-autoguardado" id="campoMedicamentosAdicionales"
+                                                rows="2" data-campo="h_medicamentos_adicionales"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Médico Tratante</label>
+                                            <input type="text" class="form-control campo-autoguardado" id="campoMedicoTratante"
+                                                data-campo="h_medico_tratante">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Observaciones</label>
+                                            <textarea class="form-control campo-autoguardado" id="campoObservaciones"
+                                                rows="2" data-campo="h_observaciones"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Notas de Evolución -->
+                            <div class="evolucion-section mt-4">
+                                <h5>Notas de Evolución</h5>
+                                <div class="input-group mb-3">
+                                    <textarea class="form-control" id="nuevaEvolucion" rows="2"
+                                        placeholder="Escriba una nota de evolución..."></textarea>
+                                    <div class="input-group-append">
+                                        <button class="btn btn-success" type="button" id="btnAgregarEvolucion">
+                                            Agregar Evolución
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="listaEvoluciones">
+                                    <!-- Notas de evolución se renderizan aquí -->
+                                </div>
+                            </div>
+
+                            <!-- Historial -->
+                            <div class="historial-section mt-4" id="historialSection" style="display:none;">
+                                <h5>Historial de Hospitalizaciones</h5>
+                                <div id="listaHistorial"></div>
+                            </div>
+                        </div>
+
+                        <!-- ===== TAB MONITOREO ===== -->
+                        <div class="tab-pane fade" id="panelMonitoreo" role="tabpanel">
+                            <h5>Hoja de Monitoreo Clínico</h5>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered tabla-monitoreo" id="tablaMonitoreo">
+                                    <thead>
+                                        <tr>
+                                            <th rowspan="2" class="parametro-col">Parámetro</th>
+                                            <th colspan="2">Lunes</th>
+                                            <th colspan="2">Martes</th>
+                                            <th colspan="2">Miércoles</th>
+                                            <th colspan="2">Jueves</th>
+                                            <th colspan="2">Viernes</th>
+                                            <th colspan="2">Sábado</th>
+                                            <th colspan="2">Domingo</th>
+                                        </tr>
+                                        <tr>
+                                            <th>AM</th><th>PM</th>
+                                            <th>AM</th><th>PM</th>
+                                            <th>AM</th><th>PM</th>
+                                            <th>AM</th><th>PM</th>
+                                            <th>AM</th><th>PM</th>
+                                            <th>AM</th><th>PM</th>
+                                            <th>AM</th><th>PM</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="bodyMonitoreo">
+                                        <!-- Filas de parámetros clínicos se renderizan dinámicamente -->
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Observaciones generales del monitoreo -->
+                            <div class="form-group mt-3">
+                                <label>Observaciones del Monitoreo</label>
+                                <div class="input-group">
+                                    <textarea class="form-control" id="observacionMonitoreo" rows="2"
+                                        placeholder="Observaciones generales del monitoreo..."></textarea>
+                                    <div class="input-group-append">
+                                        <button class="btn btn-success" type="button" id="btnGuardarObsMonitoreo">
+                                            Guardar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botones de acción -->
+                    <div class="acciones-ficha mt-4 mb-4">
+                        <button type="button" class="btn btn-info btn-sm" id="btnImprimir">
+                            🖨️ Imprimir
+                        </button>
+                        <button type="button" class="btn btn-primary btn-sm" id="btnExportarPDF">
+                            📄 Exportar PDF
+                        </button>
+                        <button type="button" class="btn btn-warning btn-sm" id="btnVerHistorial">
+                            📋 Ver Historial
+                        </button>
+                        <button type="button" class="btn btn-danger btn-sm" id="btnFinalizar">
+                            ✅ Finalizar Hospitalización
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+    <!-- Fin contenido principal -->
+
+    <!-- ========== MODAL NUEVA HOSPITALIZACIÓN ========== -->
+    <div class="modal fade" id="modalNuevaHospitalizacion" tabindex="-1"
+        aria-labelledby="modalNuevaHospitalizacionLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="modalNuevaHospitalizacionLabel">Nueva Hospitalización</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                </div>
+                <form id="formNuevaHospitalizacion">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label>Paciente *</label>
+                            <input type="text" class="form-control" id="buscarPacienteModal"
+                                placeholder="Buscar por nombre del tutor/propietario..." autocomplete="off">
+                            <div id="sugerenciasPaciente" class="sugerencias-dropdown"></div>
+                            <input type="hidden" id="selectedMascotaId">
+                            <input type="hidden" id="selectedClienteId">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Edad</label>
+                                    <input type="text" class="form-control" id="modalEdad" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Raza</label>
+                                    <input type="text" class="form-control" id="modalRaza" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Peso</label>
+                                    <input type="text" class="form-control" id="modalPeso"
+                                        placeholder="Ej: 5.2 kg">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Propietario</label>
+                                    <input type="text" class="form-control" id="modalPropietario" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Teléfono</label>
+                                    <input type="text" class="form-control" id="modalTelefono" readonly>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Fecha de Ingreso *</label>
+                                    <input type="date" class="form-control" id="modalFechaIngreso">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Fecha de Egreso</label>
+                                    <input type="date" class="form-control" id="modalFechaEgreso">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success btn-sm" id="btnGuardarHospitalizacion">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import librerias JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://code.jquery.com/jquery-3.6.3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="../js/auth-guard.js"></script>
+    <script src="../js/script.js"></script>
+    <script src="../js/hospitalizacion.js"></script>
+    <link rel="stylesheet" href="../css/loader.css">
+    <script src="../js/loader.js"></script>
+</body>
+
+</html>

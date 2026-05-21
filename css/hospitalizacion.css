@@ -1,0 +1,438 @@
+/* ========================================
+   Hospitalización - Estilos específicos
+   ======================================== */
+
+/* Header del paciente */
+.paciente-header {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.paciente-header strong {
+    color: #495057;
+}
+
+/* Indicador de guardado */
+.save-indicator {
+    position: fixed;
+    top: 70px;
+    right: 20px;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    z-index: 1050;
+    transition: opacity 0.3s ease;
+    opacity: 0;
+}
+
+.save-indicator.guardando {
+    opacity: 1;
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffc107;
+}
+
+.save-indicator.guardado {
+    opacity: 1;
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #28a745;
+}
+
+.save-indicator.error {
+    opacity: 1;
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #dc3545;
+}
+
+/* Tabla de medicamentos */
+.tabla-medicamentos {
+    font-size: 0.85rem;
+}
+
+.tabla-medicamentos thead th {
+    background: #28a745;
+    color: #fff;
+    text-align: center;
+    vertical-align: middle;
+    padding: 6px 4px;
+    white-space: nowrap;
+}
+
+.tabla-medicamentos tbody td {
+    vertical-align: middle;
+    padding: 4px 6px;
+}
+
+.tabla-medicamentos tbody input,
+.tabla-medicamentos tbody select {
+    font-size: 0.8rem;
+    padding: 2px 6px;
+    height: auto;
+    min-width: 70px;
+}
+
+.tabla-medicamentos .med-nombre-input {
+    min-width: 140px;
+}
+
+.tabla-medicamentos .med-dosis-input {
+    min-width: 80px;
+}
+
+.tabla-medicamentos .med-via-select {
+    min-width: 60px;
+}
+
+.tabla-medicamentos .med-ml-input {
+    min-width: 60px;
+}
+
+/* Grid semanal - celdas clickeables */
+.celda-dia {
+    min-width: 70px;
+    max-width: 90px;
+    cursor: pointer;
+    position: relative;
+    vertical-align: top;
+    padding: 4px !important;
+}
+
+.celda-dia:hover {
+    background-color: #e8f5e9;
+}
+
+.celda-dia .chips-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+/* Chips de hora */
+.chip-hora {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    white-space: nowrap;
+    margin: 1px 0;
+    transition: background-color 0.2s;
+}
+
+.chip-hora.pendiente {
+    background-color: #e0e0e0;
+    color: #616161;
+}
+
+.chip-hora.aplicado {
+    background-color: #4caf50;
+    color: #fff;
+}
+
+.chip-hora:hover {
+    opacity: 0.8;
+}
+
+/* Input de hora en celda */
+.input-hora-celda {
+    width: 65px;
+    font-size: 0.75rem;
+    padding: 1px 4px;
+    border: 1px solid #28a745;
+    border-radius: 3px;
+}
+
+/* Tabla de monitoreo */
+.tabla-monitoreo {
+    font-size: 0.8rem;
+}
+
+.tabla-monitoreo thead th {
+    background: #17a2b8;
+    color: #fff;
+    text-align: center;
+    vertical-align: middle;
+    padding: 4px 3px;
+    white-space: nowrap;
+}
+
+.tabla-monitoreo .parametro-col {
+    min-width: 120px;
+    background: #138496 !important;
+    position: sticky;
+    left: 0;
+    z-index: 1;
+}
+
+.tabla-monitoreo tbody td {
+    text-align: center;
+    vertical-align: middle;
+    padding: 3px 4px;
+}
+
+.tabla-monitoreo tbody td input[type="text"],
+.tabla-monitoreo tbody td input[type="number"] {
+    width: 55px;
+    font-size: 0.75rem;
+    padding: 2px 4px;
+    text-align: center;
+    border: 1px solid #ced4da;
+    border-radius: 3px;
+}
+
+.tabla-monitoreo tbody td input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.tabla-monitoreo tbody .parametro-label {
+    text-align: left;
+    font-weight: 600;
+    background: #f1f3f5;
+    position: sticky;
+    left: 0;
+    z-index: 1;
+}
+
+/* Alertas clínicas */
+.alerta-danger {
+    background-color: #ffcdd2 !important;
+    border-color: #ef5350 !important;
+}
+
+.alerta-warning {
+    background-color: #fff9c4 !important;
+    border-color: #fbc02d !important;
+}
+
+/* Notas de evolución */
+.evolucion-section .nota-evolucion {
+    background: #f8f9fa;
+    border-left: 3px solid #28a745;
+    padding: 10px 15px;
+    margin-bottom: 10px;
+    border-radius: 0 4px 4px 0;
+}
+
+.evolucion-section .nota-evolucion .nota-meta {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-bottom: 4px;
+}
+
+.evolucion-section .nota-evolucion .nota-texto {
+    font-size: 0.9rem;
+    color: #212529;
+}
+
+/* Historial */
+.historial-section .historial-item {
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 10px 15px;
+    margin-bottom: 8px;
+}
+
+.historial-section .historial-item .historial-fecha {
+    font-weight: 600;
+    color: #495057;
+}
+
+/* Sugerencias dropdown (autocompletar paciente) */
+.sugerencias-dropdown {
+    position: absolute;
+    z-index: 1060;
+    background: #fff;
+    border: 1px solid #ced4da;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    width: calc(100% - 30px);
+    display: none;
+}
+
+.sugerencias-dropdown.show {
+    display: block;
+}
+
+.sugerencias-dropdown .sugerencia-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #f1f3f5;
+    font-size: 0.85rem;
+}
+
+.sugerencias-dropdown .sugerencia-item:hover {
+    background: #e8f5e9;
+}
+
+/* Acciones ficha */
+.acciones-ficha {
+    border-top: 1px solid #dee2e6;
+    padding-top: 15px;
+}
+
+/* Botones de acción en tabla medicamentos */
+.btn-accion-med {
+    padding: 2px 6px;
+    font-size: 0.7rem;
+    margin: 1px;
+}
+
+/* Estado badges */
+.badge-activa {
+    background-color: #28a745;
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+}
+
+.badge-finalizada {
+    background-color: #6c757d;
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+}
+
+/* Indicador de alerta en listado */
+.alerta-indicador {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #dc3545;
+    margin-left: 5px;
+    animation: pulse-alert 1.5s infinite;
+}
+
+@keyframes pulse-alert {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+/* ========== RESPONSIVE ========== */
+
+/* Tablet (768px+) */
+@media (min-width: 768px) {
+    .tabla-medicamentos {
+        font-size: 0.82rem;
+    }
+
+    .tabla-monitoreo {
+        font-size: 0.78rem;
+    }
+
+    .celda-dia {
+        min-width: 65px;
+    }
+}
+
+/* Desktop (1024px+) */
+@media (min-width: 1024px) {
+    .tabla-medicamentos {
+        font-size: 0.85rem;
+    }
+
+    .tabla-monitoreo {
+        font-size: 0.8rem;
+    }
+
+    .celda-dia {
+        min-width: 80px;
+    }
+}
+
+/* ========== ESTILOS DE IMPRESIÓN ========== */
+@media print {
+    nav,
+    .top,
+    .sidebar-toggle,
+    .filter-row,
+    .acciones-ficha,
+    .save-indicator,
+    #btnVolverListado,
+    #btnAgregarMedicamento,
+    #btnAgregarEvolucion,
+    #btnGuardarObsMonitoreo,
+    .btn-accion-med,
+    .sugerencias-dropdown,
+    .logout-mode {
+        display: none !important;
+    }
+
+    .dashboard {
+        margin-left: 0 !important;
+        padding: 0 !important;
+    }
+
+    .paciente-header {
+        border: 2px solid #000;
+        margin-bottom: 10px;
+    }
+
+    .tabla-medicamentos,
+    .tabla-monitoreo {
+        font-size: 0.7rem;
+    }
+
+    .tabla-medicamentos thead th {
+        background: #333 !important;
+        color: #fff !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .tabla-monitoreo thead th {
+        background: #333 !important;
+        color: #fff !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .alerta-danger {
+        background-color: #ffcdd2 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .alerta-warning {
+        background-color: #fff9c4 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .chip-hora.aplicado {
+        background-color: #4caf50 !important;
+        color: #fff !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .tab-content > .tab-pane {
+        display: block !important;
+        opacity: 1 !important;
+    }
+
+    .nav-tabs {
+        display: none !important;
+    }
+
+    body {
+        font-size: 10pt;
+    }
+
+    .evolucion-section .nota-evolucion {
+        border-left: 2px solid #000;
+        page-break-inside: avoid;
+    }
+}

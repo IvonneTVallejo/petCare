@@ -15,6 +15,7 @@ const MODULOS_SIDEBAR = [
     { nombre: 'Compras', ruta: 'compras.html', icono: '../Images/compras.svg' },
     { nombre: 'Ventas', ruta: 'ventas.html', icono: '../Images/ventas.svg' },
     { nombre: 'Reportes', ruta: 'reportes.html', icono: '../Images/reportes.svg' },
+    { nombre: 'Hospitalización', ruta: 'hospitalizacion.html', icono: '../Images/informe-medico.png' },
     { nombre: 'Usuarios', ruta: 'usuarios.html', icono: '../Images/sesion.png' }
 ];
 
