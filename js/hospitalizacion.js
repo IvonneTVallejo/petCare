@@ -35,6 +35,8 @@ const PARAMETROS_MONITOREO = [
 document.addEventListener("DOMContentLoaded", async () => {
     await cargarListadoHospitalizaciones();
     await cargarProductosParaAutocompletar();
+    await cargarVeterinariosSelect();
+    await cargarAuxiliaresSelect();
     inicializarEventListeners();
 });
 
@@ -111,7 +113,8 @@ function inicializarEventListeners() {
 
     // Autoguardado para campos de texto
     document.querySelectorAll('.campo-autoguardado').forEach(campo => {
-        campo.addEventListener('input', () => {
+        const evento = campo.tagName === 'SELECT' ? 'change' : 'input';
+        campo.addEventListener(evento, () => {
             const nombreCampo = campo.dataset.campo;
             autoguardarCampo(nombreCampo, campo.value);
         });
@@ -437,6 +440,7 @@ async function cargarFichaHospitalizacion(hospitalizacionId) {
     document.getElementById('campoHidratacion').value = data.h_hidratacion || '';
     document.getElementById('campoMedicamentosAdicionales').value = data.h_medicamentos_adicionales || '';
     document.getElementById('campoMedicoTratante').value = data.h_medico_tratante || '';
+    document.getElementById('campoAuxiliarTratante').value = data.h_auxiliar_tratante || '';
     document.getElementById('campoObservaciones').value = data.h_observaciones || '';
 
     // Cargar datos relacionados
@@ -648,6 +652,60 @@ async function cargarProductosParaAutocompletar() {
     if (!error && data) {
         productosCache = data;
     }
+}
+
+async function cargarVeterinariosSelect() {
+    // Cargar veterinarios con rol 1 (Médico veterinario) y 2 (Veterinario jefe)
+    const { data, error } = await supabaseClient
+        .from("personal_vet")
+        .select(`
+            pv_documento, pv_nombre, pv_apellido,
+            rol_vet!inner (rv_rl_id_rol)
+        `)
+        .in("rol_vet.rv_rl_id_rol", [1, 2])
+        .order("pv_nombre");
+
+    const select = document.getElementById('campoMedicoTratante');
+    if (!select) return;
+
+    select.innerHTML = '<option value="">Seleccione...</option>';
+
+    if (error || !data) return;
+
+    data.forEach(vet => {
+        const nombre = `${vet.pv_nombre || ''} ${vet.pv_apellido || ''}`.trim();
+        const opt = document.createElement('option');
+        opt.value = nombre;
+        opt.textContent = nombre;
+        select.appendChild(opt);
+    });
+}
+
+async function cargarAuxiliaresSelect() {
+    // Cargar auxiliares con rol 3 (Auxiliar veterinario) y 4 (Practicante veterinario)
+    const { data, error } = await supabaseClient
+        .from("personal_vet")
+        .select(`
+            pv_documento, pv_nombre, pv_apellido,
+            rol_vet!inner (rv_rl_id_rol)
+        `)
+        .in("rol_vet.rv_rl_id_rol", [3, 4])
+        .order("pv_nombre");
+
+    const select = document.getElementById('campoAuxiliarTratante');
+    if (!select) return;
+
+    select.innerHTML = '<option value="">Seleccione...</option>';
+
+    if (error || !data) return;
+
+    data.forEach(aux => {
+        const nombre = `${aux.pv_nombre || ''} ${aux.pv_apellido || ''}`.trim();
+        const opt = document.createElement('option');
+        opt.value = nombre;
+        opt.textContent = nombre;
+        select.appendChild(opt);
+    });
 }
 
 function renderizarTablaMedicamentos() {
