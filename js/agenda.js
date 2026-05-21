@@ -46,7 +46,44 @@ document.addEventListener("DOMContentLoaded", async () => {
     inicializarCalendario();
     inicializarEventListeners();
     actualizarResumenDia();
+    inicializarMascaraHoraMilitar();
 });
+
+// ================= MÁSCARA HORA MILITAR (HH:MM) =================
+
+function inicializarMascaraHoraMilitar() {
+    // Generar opciones de hora en formato 24h con franjas de 30 minutos
+    const opciones = generarOpcionesHora();
+
+    document.querySelectorAll('.hora-militar-select').forEach(select => {
+        const valorActual = select.value;
+        const primeraOpcion = select.querySelector('option');
+        const textoDefault = primeraOpcion ? primeraOpcion.textContent : 'Seleccione...';
+
+        select.innerHTML = `<option value="">${textoDefault}</option>`;
+        opciones.forEach(hora => {
+            const opt = document.createElement('option');
+            opt.value = hora;
+            opt.textContent = hora;
+            select.appendChild(opt);
+        });
+
+        // Restaurar valor si existía
+        if (valorActual) select.value = valorActual;
+    });
+}
+
+function generarOpcionesHora() {
+    const opciones = [];
+    for (let h = 0; h < 24; h++) {
+        for (let m = 0; m < 60; m += 30) {
+            const hora = String(h).padStart(2, '0');
+            const minuto = String(m).padStart(2, '0');
+            opciones.push(`${hora}:${minuto}`);
+        }
+    }
+    return opciones;
+}
 
 // ================= LOAD REFERENCE DATA =================
 

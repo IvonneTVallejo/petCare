@@ -455,46 +455,46 @@
                                         <tr>
                                             <th>Día</th>
                                             <th>Activo</th>
-                                            <th>Hora Inicio</th>
-                                            <th>Hora Fin</th>
+                                            <th>Hora Inicio (24h)</th>
+                                            <th>Hora Fin (24h)</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <tr>
                                             <td>Lunes</td>
                                             <td><input type="checkbox" id="hv_activo_1" data-dia="1"></td>
-                                            <td><input type="time" class="form-control" id="hv_inicio_1" data-dia="1" disabled></td>
-                                            <td><input type="time" class="form-control" id="hv_fin_1" data-dia="1" disabled></td>
+                                            <td><select class="form-control hora-militar-select" id="hv_inicio_1" data-dia="1" disabled><option value="">--:--</option></select></td>
+                                            <td><select class="form-control hora-militar-select" id="hv_fin_1" data-dia="1" disabled><option value="">--:--</option></select></td>
                                         </tr>
                                         <tr>
                                             <td>Martes</td>
                                             <td><input type="checkbox" id="hv_activo_2" data-dia="2"></td>
-                                            <td><input type="time" class="form-control" id="hv_inicio_2" data-dia="2" disabled></td>
-                                            <td><input type="time" class="form-control" id="hv_fin_2" data-dia="2" disabled></td>
+                                            <td><select class="form-control hora-militar-select" id="hv_inicio_2" data-dia="2" disabled><option value="">--:--</option></select></td>
+                                            <td><select class="form-control hora-militar-select" id="hv_fin_2" data-dia="2" disabled><option value="">--:--</option></select></td>
                                         </tr>
                                         <tr>
                                             <td>Miércoles</td>
                                             <td><input type="checkbox" id="hv_activo_3" data-dia="3"></td>
-                                            <td><input type="time" class="form-control" id="hv_inicio_3" data-dia="3" disabled></td>
-                                            <td><input type="time" class="form-control" id="hv_fin_3" data-dia="3" disabled></td>
+                                            <td><select class="form-control hora-militar-select" id="hv_inicio_3" data-dia="3" disabled><option value="">--:--</option></select></td>
+                                            <td><select class="form-control hora-militar-select" id="hv_fin_3" data-dia="3" disabled><option value="">--:--</option></select></td>
                                         </tr>
                                         <tr>
                                             <td>Jueves</td>
                                             <td><input type="checkbox" id="hv_activo_4" data-dia="4"></td>
-                                            <td><input type="time" class="form-control" id="hv_inicio_4" data-dia="4" disabled></td>
-                                            <td><input type="time" class="form-control" id="hv_fin_4" data-dia="4" disabled></td>
+                                            <td><select class="form-control hora-militar-select" id="hv_inicio_4" data-dia="4" disabled><option value="">--:--</option></select></td>
+                                            <td><select class="form-control hora-militar-select" id="hv_fin_4" data-dia="4" disabled><option value="">--:--</option></select></td>
                                         </tr>
                                         <tr>
                                             <td>Viernes</td>
                                             <td><input type="checkbox" id="hv_activo_5" data-dia="5"></td>
-                                            <td><input type="time" class="form-control" id="hv_inicio_5" data-dia="5" disabled></td>
-                                            <td><input type="time" class="form-control" id="hv_fin_5" data-dia="5" disabled></td>
+                                            <td><select class="form-control hora-militar-select" id="hv_inicio_5" data-dia="5" disabled><option value="">--:--</option></select></td>
+                                            <td><select class="form-control hora-militar-select" id="hv_fin_5" data-dia="5" disabled><option value="">--:--</option></select></td>
                                         </tr>
                                         <tr>
                                             <td>Sábado</td>
                                             <td><input type="checkbox" id="hv_activo_6" data-dia="6"></td>
-                                            <td><input type="time" class="form-control" id="hv_inicio_6" data-dia="6" disabled></td>
-                                            <td><input type="time" class="form-control" id="hv_fin_6" data-dia="6" disabled></td>
+                                            <td><select class="form-control hora-militar-select" id="hv_inicio_6" data-dia="6" disabled><option value="">--:--</option></select></td>
+                                            <td><select class="form-control hora-militar-select" id="hv_fin_6" data-dia="6" disabled><option value="">--:--</option></select></td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -540,14 +540,18 @@
                                     <div class="row">
                                         <div class="col-md-6">
                                             <div class="form-group">
-                                                <label>Hora Inicio *</label>
-                                                <input type="time" class="form-control" id="bh_hora_inicio" required>
+                                                <label>Hora Inicio * (24h)</label>
+                                                <select class="form-control hora-militar-select" id="bh_hora_inicio" required>
+                                                    <option value="">Seleccione...</option>
+                                                </select>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="form-group">
-                                                <label>Hora Fin *</label>
-                                                <input type="time" class="form-control" id="bh_hora_fin" required>
+                                                <label>Hora Fin * (24h)</label>
+                                                <select class="form-control hora-militar-select" id="bh_hora_fin" required>
+                                                    <option value="">Seleccione...</option>
+                                                </select>
                                             </div>
                                         </div>
                                     </div>
