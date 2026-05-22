@@ -34,7 +34,26 @@ const supabaseClient = supabase.createClient(
 
 document.addEventListener("DOMContentLoaded", function () {
     generarExamenFisico();
+    inicializarCheckboxesExclusivos();
 });
+
+// ================= CHECKBOXES MUTUAMENTE EXCLUSIVOS (SI/NO) =================
+
+function inicializarCheckboxesExclusivos() {
+    document.querySelectorAll('[data-group]').forEach(checkbox => {
+        checkbox.addEventListener('change', function () {
+            if (this.checked) {
+                // Desmarcar los otros checkboxes del mismo grupo
+                const grupo = this.dataset.group;
+                document.querySelectorAll(`[data-group="${grupo}"]`).forEach(otro => {
+                    if (otro !== this) {
+                        otro.checked = false;
+                    }
+                });
+            }
+        });
+    });
+}
 
 document.addEventListener("DOMContentLoaded", async () => {
     
@@ -145,10 +164,14 @@ document.getElementById("formConsulta")
             await guardarEctoparasitos(idConsulta);
             await guardarPlanDiagnostico(idConsulta);
 
-            // Task 6.4: Descontar inventario después de guardar consulta
-            if (medicamentosSeleccionados.length > 0) {
-                await descontarInventarioConsulta(idConsulta, medicamentosSeleccionados);
-            }
+            // Pre-orden: Ya no se descuenta inventario al guardar consulta.
+            // El descuento se realiza al completar la venta en el módulo POS.
+            // if (medicamentosSeleccionados.length > 0) {
+            //     await descontarInventarioConsulta(idConsulta, medicamentosSeleccionados);
+            // }
+
+            // Generar pre-orden con los medicamentos seleccionados
+            await generarPreordenConsulta(idConsulta, medicamentosSeleccionados);
             
             // If there's a pending citaId from agenda, update the cita to Finalizada
             const citaIdPendiente = localStorage.getItem('citaIdPendiente');
@@ -386,7 +409,7 @@ async function cargarConsultas() {
 const mapaEcto = {
     pulgas: "e_pulgas",
     garrapatas: "e_garrapatas",
-    prurito: "e_prurito",
+    prurito: "e_pruito",
     copro_directo: "e_copro_directo",
     copro_flotacion: "e_copro_flotacion"
 };
@@ -611,7 +634,7 @@ document.addEventListener("click", async function (e) {
             // DESCRIPCIONES
             e_descripcion_pulgas.value = ecto?.e_descripcion_pulgas || "";
             e_descripcion_garrapatas.value = ecto?.e_descripcion_garrapatas || "";
-            e_descripcion_pruito.value = ecto?.e_descripcion_prurito || "";
+            e_descripcion_pruito.value = ecto?.e_descripcion_pruito || "";
 
             // =========================
             // 🔹 FECHA Y ESTADO
@@ -749,6 +772,13 @@ $('#modalRegistroConsulta').on('show.bs.modal', function () {
     desbloquearFormularioConsulta();
     restaurarMedicamentosEdicion();
     cargarMedicamentosInventario();
+
+    // Evento para recalcular presupuesto al cambiar valor de consulta
+    const valorConsultaInput = document.getElementById("cm_valor_consulta");
+    if (valorConsultaInput) {
+        valorConsultaInput.removeEventListener("input", actualizarPresupuestoDOM);
+        valorConsultaInput.addEventListener("input", actualizarPresupuestoDOM);
+    }
 });
 
 $('#modalRegistroConsulta').on('hidden.bs.modal', function () {
@@ -774,7 +804,7 @@ async function cargarMedicamentosInventario() {
     try {
         const { data, error } = await supabaseClient
             .from("productos")
-            .select("pr_id_producto, pr_nombre, pr_lote, pr_cantidad_disponible, pr_stock_minimo, pr_costo_compra")
+            .select("pr_id_producto, pr_nombre, pr_lote, pr_cantidad_disponible, pr_stock_minimo, pr_costo_compra, pr_precio_venta")
             .eq("pr_cat_id_categoria", 1);
 
         if (error) throw new Error(error.message);
@@ -795,7 +825,7 @@ function buscarMedicamentoPorNombreLocal(medicamentos, termino) {
     if (!Array.isArray(medicamentos)) return [];
     if (!termino || typeof termino !== 'string') return [];
     const terminoTrimmed = termino.trim();
-    if (terminoTrimmed.length < 2) return [];
+    if (terminoTrimmed.length < 1) return [];
     const terminoLower = terminoTrimmed.toLowerCase();
     return medicamentos.filter(m => {
         if (!m || !m.pr_nombre || typeof m.pr_nombre !== 'string') return false;
@@ -827,7 +857,8 @@ function agregarAlCarritoLocal(carrito, producto) {
             lote: producto.pr_lote || '',
             cantidad: 1,
             stockDisponible: producto.pr_cantidad_disponible || 0,
-            costoUnitario: producto.pr_costo_compra || 0
+            costoUnitario: producto.pr_costo_compra || 0,
+            precioVenta: producto.pr_precio_venta || 0
         }
     ];
 }
@@ -858,6 +889,37 @@ function eliminarDelCarritoLocal(carrito, productoId) {
     if (!Array.isArray(carrito)) return [];
     if (productoId == null) return [...carrito];
     return carrito.filter(item => item.productoId !== productoId);
+}
+
+/**
+ * Calcula el presupuesto total de la consulta.
+ * @param {number} valorConsulta - Valor base de la consulta
+ * @param {Array<{precioVenta: number, cantidad: number}>} items - Medicamentos del carrito
+ * @returns {number} Total con 2 decimales
+ */
+function calcularPresupuestoTotal(valorConsulta, items) {
+    const vc = (typeof valorConsulta === 'number' && isFinite(valorConsulta)) ? valorConsulta : 0;
+    if (!Array.isArray(items) || items.length === 0) {
+        return Math.round(vc * 100) / 100;
+    }
+    const sumaMedicamentos = items.reduce((acc, item) => {
+        const precio = (typeof item.precioVenta === 'number' && isFinite(item.precioVenta)) ? item.precioVenta : 0;
+        const cantidad = (typeof item.cantidad === 'number' && isFinite(item.cantidad)) ? item.cantidad : 0;
+        return acc + (precio * cantidad);
+    }, 0);
+    return Math.round((vc + sumaMedicamentos) * 100) / 100;
+}
+
+/**
+ * Recalcula y actualiza el campo cm_presupuesto en el DOM.
+ */
+function actualizarPresupuestoDOM() {
+    const valorConsultaInput = document.getElementById("cm_valor_consulta");
+    const presupuestoInput = document.getElementById("cm_presupuesto");
+    if (!presupuestoInput) return;
+    const valorConsulta = valorConsultaInput ? parseFloat(valorConsultaInput.value) || 0 : 0;
+    const total = calcularPresupuestoTotal(valorConsulta, medicamentosSeleccionados);
+    presupuestoInput.value = total.toFixed(2);
 }
 
 /**
@@ -917,8 +979,20 @@ document.addEventListener("DOMContentLoaded", function () {
     if (inputBuscar) {
         inputBuscar.addEventListener("input", function () {
             const termino = this.value;
+            if (!termino || termino.trim().length < 1) {
+                // Mostrar todos los medicamentos cuando el campo está vacío
+                renderResultadosBusqueda(medicamentosCache);
+                return;
+            }
             const resultados = buscarMedicamentoPorNombreLocal(medicamentosCache, termino);
             renderResultadosBusqueda(resultados);
+        });
+
+        // Mostrar lista completa al hacer focus
+        inputBuscar.addEventListener("focus", function () {
+            if (!this.value || this.value.trim() === '') {
+                renderResultadosBusqueda(medicamentosCache);
+            }
         });
 
         // Cerrar dropdown al hacer click fuera
@@ -986,6 +1060,7 @@ function agregarMedicamentoAlCarrito(productoId) {
 
     medicamentosSeleccionados = agregarAlCarritoLocal(medicamentosSeleccionados, producto);
     renderListaSeleccionados();
+    actualizarPresupuestoDOM();
 }
 
 function renderListaSeleccionados() {
@@ -1025,6 +1100,7 @@ function renderListaSeleccionados() {
                 i.productoId === productoId ? { ...i, cantidad: validacion.cantidadFinal } : i
             );
             renderListaSeleccionados();
+            actualizarPresupuestoDOM();
         });
     });
 
@@ -1034,6 +1110,7 @@ function renderListaSeleccionados() {
             const productoId = parseInt(this.dataset.id);
             medicamentosSeleccionados = eliminarDelCarritoLocal(medicamentosSeleccionados, productoId);
             renderListaSeleccionados();
+            actualizarPresupuestoDOM();
         });
     });
 }
@@ -1220,6 +1297,79 @@ async function rollbackDescuentos(descuentosRealizados, idConsulta) {
         } catch (rollbackErr) {
             console.error("Error en rollback para producto " + descuento.nombre, rollbackErr);
         }
+    }
+}
+
+
+// ================= PRE-ORDEN DE CONSULTA =================
+
+/**
+ * Construye el objeto de cabecera de pre-orden.
+ */
+function construirPreordenConsulta(idConsulta, idMascota, idCliente, valorConsulta, total) {
+    return {
+        po_cm_id_consulta: idConsulta,
+        po_dm_id_mascota: idMascota,
+        po_dc_id_cliente: idCliente,
+        po_valor_consulta: valorConsulta,
+        po_total: total,
+        po_estado: "pendiente",
+        po_fecha_creacion: new Date().toLocaleString("sv-SE", { timeZone: "America/Bogota" })
+    };
+}
+
+/**
+ * Construye los objetos de detalle de pre-orden.
+ */
+function construirPreordenDetalles(idPreorden, items) {
+    if (!Array.isArray(items) || items.length === 0) return [];
+    return items.map(item => ({
+        pd_po_id_preorden: idPreorden,
+        pd_pr_id_producto: item.productoId,
+        pd_cantidad: item.cantidad,
+        pd_precio_unitario: item.precioVenta || 0,
+        pd_subtotal: (item.precioVenta || 0) * item.cantidad
+    }));
+}
+
+/**
+ * Genera la pre-orden después de guardar la consulta.
+ */
+async function generarPreordenConsulta(idConsulta, items) {
+    try {
+        const idMascota = parseInt(document.getElementById("dm_id_mascota").value);
+        const idCliente = parseInt(document.getElementById("dm_dc_id_cliente").value);
+        const valorConsultaInput = document.getElementById("cm_valor_consulta");
+        const valorConsulta = valorConsultaInput ? parseFloat(valorConsultaInput.value) || 0 : 0;
+        const total = calcularPresupuestoTotal(valorConsulta, items);
+
+        const preordenData = construirPreordenConsulta(idConsulta, idMascota, idCliente, valorConsulta, total);
+
+        const { data: preorden, error: errorPreorden } = await supabaseClient
+            .from("preorden_consulta")
+            .insert(preordenData)
+            .select("po_id_preorden")
+            .single();
+
+        if (errorPreorden) throw new Error(errorPreorden.message);
+
+        // Insertar detalles si hay medicamentos
+        if (items.length > 0) {
+            const detalles = construirPreordenDetalles(preorden.po_id_preorden, items);
+            const { error: errorDetalles } = await supabaseClient
+                .from("preorden_detalle")
+                .insert(detalles);
+
+            if (errorDetalles) throw new Error(errorDetalles.message);
+        }
+
+    } catch (err) {
+        console.error("Error creando pre-orden:", err);
+        await Swal.fire({
+            title: "Advertencia",
+            text: "La consulta se guardó correctamente pero la pre-orden no pudo ser creada. Contacte al administrador.",
+            icon: "warning"
+        });
     }
 }
 

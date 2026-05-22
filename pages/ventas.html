@@ -104,6 +104,24 @@
                 <div class="pos-container">
                     <!-- LEFT SIDE: Product Search -->
                     <div class="pos-left">
+                        <!-- Pre-orden Search Section -->
+                        <div class="preorden-section mb-3">
+                            <h6 class="mb-2"><strong>🔍 Buscar Pre-orden</strong></h6>
+                            <div class="search-container preorden-search-container">
+                                <input type="text" class="form-control" id="buscarPreordenInput"
+                                    placeholder="Buscar pre-orden por paciente o tutor..." autocomplete="off">
+                                <div class="search-results" id="resultadosPreorden">
+                                    <!-- Dynamic preorder results -->
+                                </div>
+                            </div>
+                            <div id="indicadorPreorden" class="preorden-indicator mt-2" style="display:none;">
+                                <span class="badge badge-info" id="badgePreorden"></span>
+                                <button type="button" class="btn btn-sm btn-outline-danger ml-2" id="btnCancelarPreorden" title="Quitar pre-orden">✕</button>
+                            </div>
+                        </div>
+
+                        <hr>
+
                         <h6 class="mb-2"><strong>Buscar Producto</strong></h6>
                         <div class="search-container">
                             <input type="text" class="form-control" id="buscarProductoPOS"
