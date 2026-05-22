@@ -1017,3 +1017,62 @@ li {
         width: 100%;
     }
 }
+
+/* ================= PRE-ORDEN STYLES ================= */
+
+.preorden-section {
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.preorden-search-container {
+    position: relative;
+}
+
+.preorden-search-container .search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 0 0 6px 6px;
+    max-height: 250px;
+    overflow-y: auto;
+    z-index: 1050;
+    display: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.preorden-search-container .search-results.active {
+    display: block;
+}
+
+.preorden-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: #d1ecf1;
+    border: 1px solid #bee5eb;
+    border-radius: 6px;
+}
+
+.preorden-indicator .badge {
+    font-size: 12px;
+    padding: 4px 8px;
+}
+
+#btnCancelarPreorden {
+    font-size: 10px;
+    padding: 2px 6px;
+    line-height: 1;
+}
+
+.btn-cancelar-preorden-item {
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
