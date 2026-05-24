@@ -94,6 +94,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         mascota.dm_esterilizado.toUpperCase() === "S"
             ? '<span style="color:green;font-weight:bold;">✓</span>'
             : '<span style="color:red;font-weight:bold;">✗</span>';
+
+    // Mostrar/ocultar botón de esterilizado según estado
+    const btnEsterilizado = document.getElementById("btnToggleEsterilizado");
+    if (btnEsterilizado) {
+        btnEsterilizado.style.display = mascota.dm_esterilizado.toUpperCase() === "S" ? "none" : "";
+    }
     const fecha = mascota.dm_fecha_nacimiento.split(" ")[0]; // yyyy-mm-dd
     const [year, month, day] = fecha.split("-");
 
@@ -122,6 +128,54 @@ document.getElementById("btnGenerarConsulta").onclick = () => {
     limpiarCamposConsulta();
     $('#modalRegistroConsulta').modal('show');
 };
+
+// ================= TOGGLE ESTERILIZADO =================
+document.getElementById("btnToggleEsterilizado").addEventListener("click", async function () {
+    if (!mascota || !mascota.dm_id_mascota) return;
+
+    const estadoActual = mascota.dm_esterilizado?.toUpperCase() === "S" ? "S" : "N";
+
+    // Solo permitir cambiar si está en "N" (no esterilizado)
+    if (estadoActual === "S") {
+        await Swal.fire({ title: "Info", text: "Esta mascota ya está marcada como esterilizada.", icon: "info" });
+        return;
+    }
+
+    const result = await Swal.fire({
+        title: "¿Marcar esta mascota como esterilizada?",
+        text: "Esta acción no se puede revertir.",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "Sí, esterilizada",
+        cancelButtonText: "Cancelar"
+    });
+
+    if (!result.isConfirmed) return;
+
+    const { error } = await supabaseClient
+        .from("datos_mascota")
+        .update({ dm_esterilizado: "S" })
+        .eq("dm_id_mascota", mascota.dm_id_mascota);
+
+    if (error) {
+        await Swal.fire({ title: "Error", text: error.message, icon: "error" });
+        return;
+    }
+
+    mascota.dm_esterilizado = "S";
+    document.getElementById("fm_esterilizado").innerHTML =
+        '<span style="color:green;font-weight:bold;">✓</span>';
+
+    // Ocultar botón ya que no se puede revertir
+    this.style.display = "none";
+
+    await Swal.fire({
+        title: "Marcada como esterilizada",
+        icon: "success",
+        timer: 1500,
+        showConfirmButton: false
+    });
+});
 
 document.getElementById("formConsulta").addEventListener("keydown", function (e) {
     if (e.key === "Enter" && e.target.tagName !== "TEXTAREA") {
@@ -646,9 +700,8 @@ document.addEventListener("click", async function (e) {
                 fechaFormateada = `${d}/${m}/${y}`;
             }
 
-            vc_fecha.textContent = fechaFormateada;
-            vc_estado.textContent = estadoTexto;
-            vc_motivo.textContent = consulta.cm_motivo_consulta || "-";
+            document.getElementById("vc_fecha").textContent = fechaFormateada;
+            document.getElementById("vc_estado").textContent = estadoTexto;
 
             // =========================
             // 🔹 UI
