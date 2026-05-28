@@ -134,6 +134,11 @@
                                         disabled>
                                         Generar consulta
                                     </button>
+                                    <br><br>
+                                    <button type="button" id="btnHistorialMedico" class="btn btn-success btn-sm"
+                                        disabled>
+                                        Imprimir Historial Médico
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -484,12 +489,19 @@
                                         Ver seguimientos
                                     </button>
 
-                                    <button type="button" id="btnLimpiarCampos" class="btn btn-secondary btn-sm"
+                                    <button type="button" id="btnImprimirFormula" class="btn btn-success btn-sm"
+                                        style="display:none;">
+                                        Imprimir Fórmula
+                                    </button>
+
+                                    <button type="button" id="btnLimpiarCampos" class="btn btn-sm"
+                                        style="background-color:#0f5044; border-color:#0f5044; color:#fff; font-size:12.5px;"
                                         onclick="limpiarCamposConsulta()">
                                         Limpiar
                                     </button>
 
-                                    <button type="submit" id="btnGuardarConsulta" class="btn btn-success btn-sm">
+                                    <button type="submit" id="btnGuardarConsulta" class="btn btn-sm"
+                                        style="background-color:#0f5044; border-color:#0f5044; color:#fff; font-size:12.5px;">
                                         Guardar
                                     </button>
 
@@ -675,6 +687,35 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancelar</button>
                     <button type="button" class="btn btn-success btn-sm" onclick="guardarSeguimiento()">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Selección de Fechas para Historial Médico -->
+    <div class="modal fade" id="modalHistorialFechas" tabindex="-1">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title">Rango de Fechas</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="historial_fecha_inicio">Fecha Inicial *</label>
+                        <input type="date" class="form-control" id="historial_fecha_inicio" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="historial_fecha_fin">Fecha Final (opcional)</label>
+                        <input type="date" class="form-control" id="historial_fecha_fin">
+                    </div>
+                    <div id="historial_error_fechas" class="text-danger small" style="display:none;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success btn-sm" id="btnGenerarHistorial">
+                        Generar Historial
+                    </button>
                 </div>
             </div>
         </div>

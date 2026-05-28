@@ -544,6 +544,9 @@ thead th {
     display: flex;
     align-items: center;
     gap: 6px;
+    overflow-wrap: break-word;
+    word-break: break-all;
+    flex-wrap: wrap;
 }
 
 .ficha-body b {

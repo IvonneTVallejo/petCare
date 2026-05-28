@@ -1,7 +1,10 @@
 document.addEventListener("DOMContentLoaded", async () => {
 
     const datos = JSON.parse(sessionStorage.getItem("datosFormula"));
-    if (!datos) return;
+    if (!datos) {
+        document.body.innerHTML = '<p style="text-align:center;margin-top:50px;">No hay datos de fórmula disponibles.</p>';
+        return;
+    }
 
     // 🔹 Llenar plantilla
     document.getElementById("pdf_propietario").textContent = datos.propietario;
@@ -12,23 +15,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("pdf_peso").textContent = datos.peso;
     document.getElementById("pdf_tratamiento").textContent = datos.tratamiento;
 
-    // 🔹 Generar nombre dinámico
-    const fecha = new Date().toISOString().split("T")[0];
-    const nombreArchivo = `Formula_${datos.mascota}_${fecha}.pdf`;
-
-    const elemento = document.querySelector(".formula");
-
-    const opciones = {
-        margin: 0,
-        filename: nombreArchivo,
-        image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 3 },
-        jsPDF: { unit: "cm", format: [13, 20], orientation: "portrait" }
-    };
-
-    await html2pdf().set(opciones).from(elemento).save();
-
-    // 🔹 Cerrar ventana automáticamente
+    // 🔹 Limpiar sessionStorage
     sessionStorage.removeItem("datosFormula");
-    window.close();
+
+    // 🔹 Imprimir y cerrar ventana al terminar
+    setTimeout(() => {
+        window.print();
+        // Cerrar ventana después de imprimir o cancelar
+        window.onafterprint = () => window.close();
+        // Fallback: cerrar después de un tiempo si onafterprint no se dispara
+        setTimeout(() => window.close(), 1000);
+    }, 500);
 });

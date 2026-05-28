@@ -1,0 +1,310 @@
+/* ================= REPORTE HISTORIAL MÉDICO ================= */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 13px;
+    color: #333;
+    background: #f5f5f5;
+    padding-top: 60px;
+}
+
+/* ===== BARRA DE ACCIONES ===== */
+
+.barra-acciones {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background: #2c3e50;
+    padding: 12px 20px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.btn-accion {
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+.btn-imprimir {
+    background: #27ae60;
+    color: white;
+}
+
+.btn-imprimir:hover {
+    background: #219a52;
+}
+
+.btn-pdf {
+    background: #e74c3c;
+    color: white;
+}
+
+.btn-pdf:hover {
+    background: #c0392b;
+}
+
+/* ===== CONTENIDO DEL REPORTE ===== */
+
+#contenido-reporte {
+    max-width: 850px;
+    margin: 20px auto;
+    background: white;
+    padding: 30px 40px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+}
+
+/* ===== ENCABEZADO ===== */
+
+.encabezado-reporte {
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #2c3e50;
+}
+
+.encabezado-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.logo-reporte {
+    width: 70px;
+    height: 70px;
+    object-fit: contain;
+}
+
+.encabezado-titulo h1 {
+    font-size: 20px;
+    color: #2c3e50;
+    margin-bottom: 4px;
+}
+
+.encabezado-titulo h2 {
+    font-size: 14px;
+    color: #7f8c8d;
+    font-weight: 400;
+}
+
+.encabezado-datos {
+    display: flex;
+    gap: 40px;
+    margin-top: 15px;
+}
+
+.datos-paciente,
+.datos-tutor {
+    flex: 1;
+}
+
+.datos-paciente h3,
+.datos-tutor h3 {
+    font-size: 13px;
+    color: #2c3e50;
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #ecf0f1;
+}
+
+.encabezado-datos table {
+    width: 100%;
+    font-size: 12px;
+}
+
+.encabezado-datos table td {
+    padding: 2px 5px;
+    vertical-align: top;
+}
+
+.encabezado-datos table td:first-child {
+    width: 110px;
+    white-space: nowrap;
+}
+
+.rango-fechas {
+    margin-top: 15px;
+    padding: 8px 12px;
+    background: #ecf0f1;
+    border-radius: 4px;
+    font-size: 12px;
+    text-align: center;
+}
+
+/* ===== EVENTOS CLÍNICOS ===== */
+
+.eventos-container {
+    margin-top: 20px;
+}
+
+.evento-clinico {
+    margin-bottom: 18px;
+    border-radius: 4px;
+    border: 1px solid #e0e0e0;
+    overflow: hidden;
+    border-left: 4px solid #bdc3c7;
+}
+
+.evento-clinico.evento-consulta {
+    border-left-color: #3498db;
+}
+
+.evento-clinico.evento-vacunacion {
+    border-left-color: #27ae60;
+}
+
+.evento-clinico.evento-hospitalizacion {
+    border-left-color: #e74c3c;
+}
+
+.evento-clinico.evento-seguimiento {
+    border-left-color: #f39c12;
+}
+
+.evento-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 14px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.evento-tipo {
+    font-weight: 600;
+    font-size: 13px;
+    color: #2c3e50;
+}
+
+.evento-fecha {
+    font-size: 12px;
+    color: #7f8c8d;
+    font-weight: 500;
+}
+
+.evento-contenido {
+    padding: 12px 14px;
+}
+
+.campo-evento {
+    margin-bottom: 6px;
+    line-height: 1.5;
+}
+
+.campo-evento strong {
+    color: #2c3e50;
+}
+
+.sub-seccion {
+    margin: 10px 0;
+    padding: 8px 10px;
+    background: #f9f9f9;
+    border-radius: 3px;
+    border: 1px solid #eee;
+}
+
+.sub-seccion strong {
+    display: block;
+    margin-bottom: 5px;
+    color: #2c3e50;
+}
+
+.sub-seccion ul {
+    margin: 5px 0 0 20px;
+    padding: 0;
+}
+
+.sub-seccion ul li {
+    margin-bottom: 3px;
+    font-size: 12px;
+}
+
+.examen-fisico-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px 15px;
+    margin-top: 5px;
+    font-size: 12px;
+}
+
+.examen-fisico-grid span em {
+    font-style: normal;
+    color: #555;
+}
+
+/* ===== TABLA MONITOREO ===== */
+
+.tabla-monitoreo {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+    font-size: 11px;
+}
+
+.tabla-monitoreo th,
+.tabla-monitoreo td {
+    border: 1px solid #ddd;
+    padding: 4px 8px;
+    text-align: center;
+}
+
+.tabla-monitoreo th {
+    background: #ecf0f1;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+/* ===== MENSAJE VACÍO ===== */
+
+.mensaje-vacio {
+    text-align: center;
+    padding: 60px 20px;
+    color: #7f8c8d;
+    font-size: 16px;
+}
+
+/* ===== ESTILOS DE IMPRESIÓN ===== */
+
+@media print {
+    .no-print,
+    .barra-acciones {
+        display: none !important;
+    }
+
+    body {
+        padding-top: 0;
+        background: white;
+        font-size: 11px;
+    }
+
+    #contenido-reporte {
+        max-width: 100%;
+        margin: 0;
+        padding: 15px 20px;
+        box-shadow: none;
+        border-radius: 0;
+    }
+
+    .evento-clinico {
+        page-break-inside: avoid;
+    }
+
+    .encabezado-reporte {
+        page-break-after: avoid;
+    }
+}
