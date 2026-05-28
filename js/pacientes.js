@@ -224,6 +224,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("fp_direccion").textContent = paciente.dc_direccion;
     document.getElementById("fp_email").textContent = paciente.dc_correo;
 
+    // Mostrar botón de editar tutor
+    const btnEditar = document.getElementById("btnEditarTutor");
+    if (btnEditar) btnEditar.style.display = "";
+
     await cargarMascotas();
 
     // 🔥 Solo borramos pacienteNuevo
@@ -451,6 +455,10 @@ async function seleccionarCliente(id) {
     document.getElementById("fp_telefono").textContent = cliente.dc_telefono;
     document.getElementById("fp_direccion").textContent = cliente.dc_direccion;
     document.getElementById("fp_email").textContent = cliente.dc_correo;
+
+    // Mostrar botón de editar tutor
+    const btnEditar = document.getElementById("btnEditarTutor");
+    if (btnEditar) btnEditar.style.display = "";
 
     document.getElementById("btnCrearMascota").disabled = false;
 

@@ -740,6 +740,15 @@ thead {
 }
 
 /* ===== Receipt Modal ===== */
+#modalRecibo {
+    z-index: 1060;
+}
+
+#modalRecibo + .modal-backdrop,
+.modal-backdrop ~ .modal-backdrop {
+    z-index: 1055;
+}
+
 .recibo-content {
     font-family: 'Poppins', sans-serif;
     padding: 20px;

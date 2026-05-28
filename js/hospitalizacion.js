@@ -12,6 +12,7 @@ let observacionesCache = [];
 let productosCache = [];
 let hospitalizacionesCache = [];
 let debounceTimers = {};
+let carritoMedicamentosAdicionales = [];
 
 const DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 const DIAS_CORTOS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
@@ -125,6 +126,9 @@ function inicializarEventListeners() {
     if (fechaIngreso && !fechaIngreso.value) {
         fechaIngreso.value = new Date().toISOString().split('T')[0];
     }
+
+    // Carrito medicamentos adicionales
+    inicializarCarritoMedicamentosAdicionalesUI();
 }
 
 // ================= UTILITY FUNCTIONS =================
@@ -438,10 +442,16 @@ async function cargarFichaHospitalizacion(hospitalizacionId) {
 
     // Campos adicionales
     document.getElementById('campoHidratacion').value = data.h_hidratacion || '';
-    document.getElementById('campoMedicamentosAdicionales').value = data.h_medicamentos_adicionales || '';
+    document.getElementById('campoObservaciones').value = data.h_observaciones || '';
+
+    // Cargar carrito de medicamentos adicionales
+    cargarCarritoMedicamentosDesdeHospitalizacion(data);
+
+    // Recargar selects de médico y auxiliar antes de asignar valores
+    await cargarVeterinariosSelect();
+    await cargarAuxiliaresSelect();
     document.getElementById('campoMedicoTratante').value = data.h_medico_tratante || '';
     document.getElementById('campoAuxiliarTratante').value = data.h_auxiliar_tratante || '';
-    document.getElementById('campoObservaciones').value = data.h_observaciones || '';
 
     // Cargar datos relacionados
     await cargarMedicamentos(hospitalizacionId);
@@ -528,8 +538,6 @@ async function finalizarHospitalizacion(hospitalizacionId) {
         return;
     }
 
-    Swal.fire({ icon: 'success', title: 'Hospitalización finalizada', text: `Fecha de egreso: ${fechaEgreso}`, timer: 2000, showConfirmButton: false });
-
     // Actualizar estado local
     if (hospitalizacionActual) {
         hospitalizacionActual.h_estado = 'finalizada';
@@ -537,7 +545,369 @@ async function finalizarHospitalizacion(hospitalizacionId) {
     }
     document.getElementById('fichaFechaEgreso').textContent = fechaEgreso;
     configurarModoLectura(true);
+
+    // Generar pre-orden
+    try {
+        const resultado = await generarPreordenHospitalizacion(hospitalizacionId);
+        if (!resultado.generada) {
+            Swal.fire({
+                icon: 'info',
+                title: 'Hospitalización finalizada',
+                text: 'No se generó pre-orden (sin medicamentos registrados).',
+                timer: 3000,
+                showConfirmButton: true
+            });
+        } else if (resultado.advertencias.length > 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Finalizada con advertencias',
+                html: `Pre-orden generada: $${Number(resultado.total).toLocaleString('es-CO')}<br><br>Medicamentos no incluidos:<br>${resultado.advertencias.join('<br>')}`
+            });
+        } else {
+            Swal.fire({
+                icon: 'success',
+                title: 'Hospitalización finalizada',
+                text: `Pre-orden generada: $${Number(resultado.total).toLocaleString('es-CO')}`,
+                timer: 2500,
+                showConfirmButton: true
+            });
+        }
+    } catch (errPreorden) {
+        console.error("Error creando pre-orden:", errPreorden);
+        Swal.fire({
+            icon: 'warning',
+            title: 'Advertencia',
+            text: 'La hospitalización se finalizó pero la pre-orden no pudo ser creada.'
+        });
+    }
+
     await cargarListadoHospitalizaciones();
+}
+
+
+// ================= GENERACIÓN DE PRE-ORDEN =================
+
+function construirPreordenHospitalizacion(idHospitalizacion, idMascota, idCliente, total) {
+    const ahora = new Date().toLocaleString("sv-SE", { timeZone: "America/Bogota" });
+    return {
+        po_h_id_hospitalizacion: idHospitalizacion,
+        po_cm_id_consulta: null,
+        po_dm_id_mascota: idMascota,
+        po_dc_id_cliente: idCliente,
+        po_valor_consulta: 0,
+        po_total: total,
+        po_estado: "pendiente",
+        po_fecha_creacion: ahora
+    };
+}
+
+function construirDetallesPreordenHospitalizacion(idPreorden, items) {
+    if (!Array.isArray(items)) return [];
+    return items.map(item => ({
+        pd_po_id_preorden: idPreorden,
+        pd_pr_id_producto: item.pr_id_producto,
+        pd_cantidad: item.cantidad,
+        pd_precio_unitario: item.precio_unitario,
+        pd_subtotal: item.precio_unitario * item.cantidad
+    }));
+}
+
+async function buscarProductosPorNombre(nombres) {
+    const mapa = new Map();
+    if (!nombres || nombres.length === 0) return mapa;
+
+    const { data, error } = await supabaseClient
+        .from("productos")
+        .select("pr_id_producto, pr_nombre, pr_precio_venta")
+        .in("pr_nombre", nombres);
+
+    if (error) {
+        console.error('Error buscando productos por nombre:', error);
+        return mapa;
+    }
+
+    (data || []).forEach(p => {
+        mapa.set(p.pr_nombre.toLowerCase(), { pr_id_producto: p.pr_id_producto, pr_precio_venta: p.pr_precio_venta });
+    });
+    return mapa;
+}
+
+async function generarPreordenHospitalizacion(hospitalizacionId) {
+    const resultado = { total: 0, advertencias: [], generada: false };
+
+    // 1. Obtener medicamentos activos
+    const { data: medsActivos, error: errMeds } = await supabaseClient
+        .from("hospitalizacion_medicamentos")
+        .select("hm_nombre")
+        .eq("hm_hospitalizacion_id", hospitalizacionId)
+        .eq("hm_activo", true);
+
+    if (errMeds) throw new Error("Error obteniendo medicamentos: " + errMeds.message);
+
+    // 2. Leer carrito de medicamentos adicionales (from current state or DB)
+    let carritoAdicionales = carritoMedicamentosAdicionales;
+    if (carritoAdicionales.length === 0 && hospitalizacionActual && hospitalizacionActual.h_medicamentos_adicionales_json) {
+        carritoAdicionales = deserializarCarritoMedicamentos(hospitalizacionActual.h_medicamentos_adicionales_json);
+    }
+
+    const nombresActivos = (medsActivos || []).map(m => m.hm_nombre).filter(n => n && n.trim() !== '');
+
+    // 3. Si no hay medicamentos, omitir
+    if (nombresActivos.length === 0 && carritoAdicionales.length === 0) {
+        resultado.generada = false;
+        return resultado;
+    }
+
+    // 4. Buscar productos por nombre para los activos
+    let itemsConsolidados = [];
+
+    if (nombresActivos.length > 0) {
+        const mapaProductos = await buscarProductosPorNombre(nombresActivos);
+        nombresActivos.forEach(nombre => {
+            const prod = mapaProductos.get(nombre.toLowerCase());
+            if (prod) {
+                itemsConsolidados.push({
+                    pr_id_producto: prod.pr_id_producto,
+                    cantidad: 1,
+                    precio_unitario: prod.pr_precio_venta
+                });
+            } else {
+                resultado.advertencias.push(nombre);
+            }
+        });
+    }
+
+    // 5. Agregar medicamentos adicionales del carrito
+    carritoAdicionales.forEach(item => {
+        itemsConsolidados.push({
+            pr_id_producto: item.pr_id_producto,
+            cantidad: item.cantidad,
+            precio_unitario: item.precio_unitario
+        });
+    });
+
+    // Si después de filtrar no quedan items
+    if (itemsConsolidados.length === 0) {
+        resultado.generada = false;
+        return resultado;
+    }
+
+    // 6. Calcular total
+    const total = itemsConsolidados.reduce((sum, item) => sum + (item.precio_unitario * item.cantidad), 0);
+
+    // 7. Insertar cabecera
+    const idMascota = hospitalizacionActual?.h_mascota_id;
+    const idCliente = hospitalizacionActual?.h_cliente_id;
+    const cabecera = construirPreordenHospitalizacion(hospitalizacionId, idMascota, idCliente, total);
+
+    const { data: preordenData, error: errPreorden } = await supabaseClient
+        .from("preorden_consulta")
+        .insert([cabecera])
+        .select("po_id_preorden")
+        .single();
+
+    if (errPreorden) throw new Error("Error creando pre-orden: " + errPreorden.message);
+
+    // 8. Insertar detalles
+    const detalles = construirDetallesPreordenHospitalizacion(preordenData.po_id_preorden, itemsConsolidados);
+    if (detalles.length > 0) {
+        const { error: errDetalles } = await supabaseClient
+            .from("preorden_detalle")
+            .insert(detalles);
+        if (errDetalles) throw new Error("Error creando detalles de pre-orden: " + errDetalles.message);
+    }
+
+    resultado.total = total;
+    resultado.generada = true;
+    return resultado;
+}
+
+
+// ================= CARRITO MEDICAMENTOS ADICIONALES =================
+
+async function buscarMedicamentoAdicional(termino) {
+    if (!termino || termino.trim().length < 2) return [];
+    const { data, error } = await supabaseClient
+        .from("productos")
+        .select("pr_id_producto, pr_nombre, pr_precio_venta")
+        .ilike("pr_nombre", `%${termino.trim()}%`)
+        .in("pr_cat_id_categoria", [1, 4])
+        .limit(10);
+    if (error) {
+        console.error('Error buscando medicamento adicional:', error);
+        return [];
+    }
+    return data || [];
+}
+
+function agregarMedicamentoAdicional(producto, carritoActual) {
+    const copia = carritoActual.map(item => ({ ...item }));
+    const idx = copia.findIndex(item => item.pr_id_producto === producto.pr_id_producto);
+    if (idx >= 0) {
+        copia[idx].cantidad += 1;
+    } else {
+        copia.push({
+            pr_id_producto: producto.pr_id_producto,
+            nombre: producto.pr_nombre,
+            cantidad: 1,
+            precio_unitario: producto.pr_precio_venta
+        });
+    }
+    return copia;
+}
+
+function eliminarMedicamentoAdicional(indice, carritoActual) {
+    const copia = carritoActual.map(item => ({ ...item }));
+    if (indice >= 0 && indice < copia.length) {
+        copia.splice(indice, 1);
+    }
+    return copia;
+}
+
+function actualizarCantidadMedicamentoAdicional(indice, nuevaCantidad, carritoActual) {
+    const copia = carritoActual.map(item => ({ ...item }));
+    if (indice >= 0 && indice < copia.length) {
+        copia[indice].cantidad = Math.max(1, parseInt(nuevaCantidad) || 1);
+    }
+    return copia;
+}
+
+function serializarCarritoMedicamentos(carrito) {
+    if (!Array.isArray(carrito)) return [];
+    return carrito.map(item => ({
+        pr_id_producto: item.pr_id_producto,
+        nombre: item.nombre,
+        cantidad: item.cantidad,
+        precio_unitario: item.precio_unitario
+    }));
+}
+
+function deserializarCarritoMedicamentos(json) {
+    if (!json) return [];
+    let parsed = json;
+    if (typeof json === 'string') {
+        try { parsed = JSON.parse(json); } catch (e) { return []; }
+    }
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map(item => ({
+        pr_id_producto: item.pr_id_producto,
+        nombre: item.nombre || '',
+        cantidad: item.cantidad || 1,
+        precio_unitario: item.precio_unitario || 0
+    }));
+}
+
+function renderizarCarritoMedicamentosAdicionales() {
+    const container = document.getElementById('listaMedicamentosAdicionales');
+    if (!container) return;
+
+    if (carritoMedicamentosAdicionales.length === 0) {
+        container.innerHTML = '<p class="text-muted" style="font-size:0.85rem;">No hay medicamentos adicionales seleccionados.</p>';
+        return;
+    }
+
+    container.innerHTML = carritoMedicamentosAdicionales.map((item, idx) => `
+        <div class="d-flex align-items-center mb-1" style="gap:6px;">
+            <span style="flex:1; font-size:0.85rem;">${item.nombre}</span>
+            <input type="number" class="form-control form-control-sm" style="width:60px;" min="1" value="${item.cantidad}"
+                onchange="onCambiarCantidadMedAdicional(${idx}, this.value)">
+            <button class="btn btn-sm btn-outline-danger" onclick="onEliminarMedAdicional(${idx})" title="Eliminar">🗑️</button>
+        </div>
+    `).join('');
+}
+
+async function persistirCarritoMedicamentosAdicionales() {
+    if (!hospitalizacionActual) return;
+    const json = serializarCarritoMedicamentos(carritoMedicamentosAdicionales);
+    const { error } = await supabaseClient
+        .from("hospitalizaciones")
+        .update({ h_medicamentos_adicionales_json: json })
+        .eq("h_id_hospitalizacion", hospitalizacionActual.h_id_hospitalizacion);
+    if (error) {
+        console.error('Error persistiendo carrito medicamentos adicionales:', error);
+        mostrarIndicadorGuardado('error');
+    } else {
+        mostrarIndicadorGuardado('guardado');
+    }
+}
+
+function onCambiarCantidadMedAdicional(indice, valor) {
+    carritoMedicamentosAdicionales = actualizarCantidadMedicamentoAdicional(indice, valor, carritoMedicamentosAdicionales);
+    renderizarCarritoMedicamentosAdicionales();
+    persistirCarritoMedicamentosAdicionales();
+}
+
+function onEliminarMedAdicional(indice) {
+    carritoMedicamentosAdicionales = eliminarMedicamentoAdicional(indice, carritoMedicamentosAdicionales);
+    renderizarCarritoMedicamentosAdicionales();
+    persistirCarritoMedicamentosAdicionales();
+}
+
+function inicializarCarritoMedicamentosAdicionalesUI() {
+    const input = document.getElementById('buscarMedicamentoAdicionalInput');
+    if (!input) return;
+
+    input.addEventListener('input', debounce(async function () {
+        const termino = this.value.trim();
+        const dropdown = document.getElementById('dropdownMedicamentosAdicionales');
+        if (termino.length < 2) {
+            dropdown.classList.remove('show');
+            dropdown.innerHTML = '';
+            return;
+        }
+        const resultados = await buscarMedicamentoAdicional(termino);
+        if (resultados.length === 0) {
+            dropdown.innerHTML = '<div class="sugerencia-item text-muted">Sin resultados</div>';
+            dropdown.classList.add('show');
+            return;
+        }
+        dropdown.innerHTML = resultados.map(p => `
+            <div class="sugerencia-item" data-producto='${JSON.stringify(p).replace(/'/g, "&#39;")}'>
+                ${p.pr_nombre} — $${Number(p.pr_precio_venta).toLocaleString('es-CO')}
+            </div>
+        `).join('');
+        dropdown.classList.add('show');
+
+        dropdown.querySelectorAll('.sugerencia-item').forEach(item => {
+            item.addEventListener('click', function () {
+                const producto = JSON.parse(this.dataset.producto);
+                carritoMedicamentosAdicionales = agregarMedicamentoAdicional(producto, carritoMedicamentosAdicionales);
+                renderizarCarritoMedicamentosAdicionales();
+                persistirCarritoMedicamentosAdicionales();
+                dropdown.classList.remove('show');
+                dropdown.innerHTML = '';
+                input.value = '';
+            });
+        });
+    }, 300));
+
+    // Close dropdown on outside click
+    document.addEventListener('click', function (e) {
+        const dropdown = document.getElementById('dropdownMedicamentosAdicionales');
+        if (dropdown && !input.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.classList.remove('show');
+            dropdown.innerHTML = '';
+        }
+    });
+}
+
+function cargarCarritoMedicamentosDesdeHospitalizacion(hospitalizacion) {
+    // Load from JSON field
+    carritoMedicamentosAdicionales = deserializarCarritoMedicamentos(hospitalizacion.h_medicamentos_adicionales_json);
+    renderizarCarritoMedicamentosAdicionales();
+
+    // Show legacy text field if it has data and JSON is empty
+    const legacyContainer = document.getElementById('campoMedicamentosAdicionalesLegacy');
+    const campoTexto = document.getElementById('campoMedicamentosAdicionales');
+    if (legacyContainer && campoTexto) {
+        if (hospitalizacion.h_medicamentos_adicionales && hospitalizacion.h_medicamentos_adicionales.trim() !== '' && carritoMedicamentosAdicionales.length === 0) {
+            legacyContainer.style.display = 'block';
+            campoTexto.value = hospitalizacion.h_medicamentos_adicionales;
+        } else {
+            legacyContainer.style.display = 'none';
+            campoTexto.value = '';
+        }
+    }
 }
 
 
@@ -646,7 +1016,7 @@ async function cargarProductosParaAutocompletar() {
     const { data, error } = await supabaseClient
         .from("productos")
         .select("pr_nombre")
-        .eq("pr_cat_id_categoria", 1)
+        .in("pr_cat_id_categoria", [1, 4])
         .order("pr_nombre");
 
     if (!error && data) {
@@ -655,25 +1025,31 @@ async function cargarProductosParaAutocompletar() {
 }
 
 async function cargarVeterinariosSelect() {
-    // Cargar veterinarios con rol 1 (Médico veterinario) y 2 (Veterinario jefe)
+    // Cargar veterinarios con rol "Médico veterinario" o "Veterinario jefe"
     const { data, error } = await supabaseClient
-        .from("personal_vet")
-        .select(`
-            pv_documento, pv_nombre, pv_apellido,
-            rol_vet!inner (rv_rl_id_rol)
-        `)
-        .in("rol_vet.rv_rl_id_rol", [1, 2])
-        .order("pv_nombre");
+        .from("rol_vet")
+        .select("rv_rol, rv_pv_documento")
+        .eq("rv_estado", true)
+        .in("rv_rol", ["Médico veterinario", "Veterinario jefe"]);
 
     const select = document.getElementById('campoMedicoTratante');
     if (!select) return;
 
     select.innerHTML = '<option value="">Seleccione...</option>';
 
-    if (error || !data) return;
+    if (error || !data || data.length === 0) return;
 
-    data.forEach(vet => {
-        const nombre = `${vet.pv_nombre || ''} ${vet.pv_apellido || ''}`.trim();
+    // Obtener nombres del personal
+    const documentos = data.map(r => r.rv_pv_documento);
+    const { data: personal } = await supabaseClient
+        .from("personal_vet")
+        .select("pv_documento, pv_primer_nombre, pv_primer_apellido")
+        .in("pv_documento", documentos);
+
+    if (!personal) return;
+
+    personal.forEach(vet => {
+        const nombre = `${vet.pv_primer_nombre || ''} ${vet.pv_primer_apellido || ''}`.trim();
         const opt = document.createElement('option');
         opt.value = nombre;
         opt.textContent = nombre;
@@ -682,25 +1058,31 @@ async function cargarVeterinariosSelect() {
 }
 
 async function cargarAuxiliaresSelect() {
-    // Cargar auxiliares con rol 3 (Auxiliar veterinario) y 4 (Practicante veterinario)
+    // Cargar auxiliares con rol "Auxiliar veterinario" o "Practicante veterinario"
     const { data, error } = await supabaseClient
-        .from("personal_vet")
-        .select(`
-            pv_documento, pv_nombre, pv_apellido,
-            rol_vet!inner (rv_rl_id_rol)
-        `)
-        .in("rol_vet.rv_rl_id_rol", [3, 4])
-        .order("pv_nombre");
+        .from("rol_vet")
+        .select("rv_rol, rv_pv_documento")
+        .eq("rv_estado", true)
+        .in("rv_rol", ["Auxiliar veterinario", "Practicante veterinario"]);
 
     const select = document.getElementById('campoAuxiliarTratante');
     if (!select) return;
 
     select.innerHTML = '<option value="">Seleccione...</option>';
 
-    if (error || !data) return;
+    if (error || !data || data.length === 0) return;
 
-    data.forEach(aux => {
-        const nombre = `${aux.pv_nombre || ''} ${aux.pv_apellido || ''}`.trim();
+    // Obtener nombres del personal
+    const documentos = data.map(r => r.rv_pv_documento);
+    const { data: personal } = await supabaseClient
+        .from("personal_vet")
+        .select("pv_documento, pv_primer_nombre, pv_primer_apellido")
+        .in("pv_documento", documentos);
+
+    if (!personal) return;
+
+    personal.forEach(aux => {
+        const nombre = `${aux.pv_primer_nombre || ''} ${aux.pv_primer_apellido || ''}`.trim();
         const opt = document.createElement('option');
         opt.value = nombre;
         opt.textContent = nombre;
@@ -899,25 +1281,42 @@ async function agregarNotaAdministracion(administracionId, nota) {
 }
 
 function mostrarInputHora(celda, medicamentoId, diaSemana) {
-    // Evitar si ya hay un input
+    // Evitar si ya hay un select
     if (celda.querySelector('.input-hora-celda')) return;
 
-    const input = document.createElement('input');
-    input.type = 'time';
-    input.className = 'input-hora-celda';
-    input.addEventListener('change', async function () {
+    const select = document.createElement('select');
+    select.className = 'input-hora-celda';
+
+    // Opción por defecto
+    const optDefault = document.createElement('option');
+    optDefault.value = '';
+    optDefault.textContent = 'HH:MM';
+    select.appendChild(optDefault);
+
+    // Generar opciones cada 30 minutos en formato 24h
+    for (let h = 0; h < 24; h++) {
+        for (let m = 0; m < 60; m += 30) {
+            const hora = String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+            const opt = document.createElement('option');
+            opt.value = hora;
+            opt.textContent = hora;
+            select.appendChild(opt);
+        }
+    }
+
+    select.addEventListener('change', async function () {
         const hora = this.value;
         if (hora) {
             await registrarAdministracion(medicamentoId, diaSemana, hora);
         }
         this.remove();
     });
-    input.addEventListener('blur', function () {
+    select.addEventListener('blur', function () {
         setTimeout(() => this.remove(), 200);
     });
 
-    celda.appendChild(input);
-    input.focus();
+    celda.appendChild(select);
+    select.focus();
 }
 
 async function interaccionChipAdministracion(administracionId, yaAplicado) {

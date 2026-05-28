@@ -227,8 +227,20 @@
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label>Medicamentos Adicionales</label>
-                                            <textarea class="form-control campo-autoguardado" id="campoMedicamentosAdicionales"
-                                                rows="2" data-campo="h_medicamentos_adicionales"></textarea>
+                                            <!-- Legacy text field (read-only, hidden for new records) -->
+                                            <div id="campoMedicamentosAdicionalesLegacy" style="display:none;">
+                                                <textarea class="form-control" id="campoMedicamentosAdicionales"
+                                                    rows="2" readonly disabled></textarea>
+                                            </div>
+                                            <!-- Cart UI for additional medications -->
+                                            <div id="carritoMedicamentosAdicionalesUI">
+                                                <div style="position:relative;">
+                                                    <input type="text" class="form-control" id="buscarMedicamentoAdicionalInput"
+                                                        placeholder="Buscar medicamento o vacuna..." autocomplete="off">
+                                                    <div id="dropdownMedicamentosAdicionales" class="sugerencias-dropdown"></div>
+                                                </div>
+                                                <div id="listaMedicamentosAdicionales" class="mt-2"></div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

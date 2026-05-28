@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Historial Médico</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="../css/reporte-historial.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+
+<body>
+
+    <!-- Barra de acciones fija -->
+    <div class="barra-acciones no-print">
+        <button type="button" id="btnImprimir" class="btn-accion btn-imprimir">
+            🖨️ Imprimir
+        </button>
+        <button type="button" id="btnExportarPDF" class="btn-accion btn-pdf">
+            📄 Exportar PDF
+        </button>
+    </div>
+
+    <!-- Contenido del reporte -->
+    <div id="contenido-reporte">
+        <!-- Se renderiza dinámicamente -->
+    </div>
+
+    <script src="../js/reporte_historial.js"></script>
+
+</body>
+
+</html>

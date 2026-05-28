@@ -1,4 +1,4 @@
-// ================= CONFIG =================
+﻿// ================= CONFIG =================
 
 const SUPABASE_URL = "https://nlqtzidfowoxylporidi.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Qe7khKcVgFoN1KpXydGbcA_mEddQQNi";
@@ -461,6 +461,16 @@ function cerrarResultadosCliente() {
 // ================= PRE-ORDEN SEARCH (Task 7) =================
 
 /**
+ * Determina el origen de una pre-orden para mostrar indicador visual.
+ * @param {object} preorden - Objeto de pre-orden
+ * @returns {string} "Consulta" o "Hospitalización"
+ */
+function obtenerOrigenPreorden(preorden) {
+    if (preorden.po_h_id_hospitalizacion) return "Hospitalización";
+    return "Consulta";
+}
+
+/**
  * Valida si el término de búsqueda es suficiente para ejecutar la consulta.
  * @param {string} termino
  * @returns {boolean}
@@ -481,6 +491,7 @@ async function buscarPreordenesPendientes(termino) {
             .select(`
                 po_id_preorden,
                 po_cm_id_consulta,
+                po_h_id_hospitalizacion,
                 po_dm_id_mascota,
                 po_dc_id_cliente,
                 po_valor_consulta,
@@ -529,14 +540,17 @@ function renderizarResultadosPreorden(preordenes) {
         const nombreCliente = po.datos_cliente?.dc_nombre || "Sin tutor";
         const fecha = po.po_fecha_creacion ? new Date(po.po_fecha_creacion).toLocaleDateString("es-CO") : "-";
         const total = Number(po.po_total).toLocaleString("es-CO");
+        const origen = obtenerOrigenPreorden(po);
+        const origenBadge = '<span class="badge ' + (origen === "Hospitalización" ? 'badge-info' : 'badge-primary') + '" style="font-size:0.75rem;">' + (origen === "Hospitalización" ? '\u{1F3E5}' : '\u{1FA7A}') + ' ' + origen + '</span>';
+        const refText = origen === "Hospitalización" ? "Hosp. #" + po.po_h_id_hospitalizacion : "Consulta #" + po.po_cm_id_consulta;
 
         const item = document.createElement("div");
         item.classList.add("search-result-item");
         item.innerHTML = `
             <div class="product-info">
-                <div class="product-name">\u{1F43E} ${nombreMascota} - ${nombreCliente}</div>
+                <div class="product-name">\u{1F43E} ${nombreMascota} - ${nombreCliente} ${origenBadge}</div>
                 <div class="product-details">
-                    Fecha: ${fecha} | Total: $${total} | Consulta #${po.po_cm_id_consulta}
+                    Fecha: ${fecha} | Total: $${total} | ${refText}
                 </div>
             </div>
             <div>
@@ -683,7 +697,9 @@ function mostrarIndicadorPreorden(preorden) {
     const badge = document.getElementById("badgePreorden");
     if (indicador && badge) {
         const nombreMascota = preorden.datos_mascota?.dm_nombre || "";
-        badge.textContent = "\u{1F4CB} Pre-orden #" + preorden.po_id_preorden + " - " + nombreMascota + " (Consulta #" + preorden.po_cm_id_consulta + ")";
+        var origenPO = obtenerOrigenPreorden(preorden);
+        var refTextPO = origenPO === "Hospitalización" ? "Hosp. #" + preorden.po_h_id_hospitalizacion : "Consulta #" + preorden.po_cm_id_consulta;
+        badge.textContent = "\u{1F4CB} Pre-orden #" + preorden.po_id_preorden + " - " + nombreMascota + " (" + refTextPO + ")";
         indicador.style.display = "flex";
     }
 }

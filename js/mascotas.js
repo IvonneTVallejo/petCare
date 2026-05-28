@@ -109,6 +109,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     btnGenerarConsulta.disabled = false;
+    document.getElementById("btnHistorialMedico").disabled = false;
     cargarConsultas();
     
     // If coming from agenda, auto-open consultation modal
@@ -226,6 +227,9 @@ document.getElementById("formConsulta")
 
             // Generar pre-orden con los medicamentos seleccionados
             await generarPreordenConsulta(idConsulta, medicamentosSeleccionados);
+
+            // Registrar vacunas aplicadas en info_vacunacion
+            await registrarVacunasAplicadas(medicamentosSeleccionados);
             
             // If there's a pending citaId from agenda, update the cita to Finalizada
             const citaIdPendiente = localStorage.getItem('citaIdPendiente');
@@ -623,7 +627,7 @@ document.addEventListener("click", async function (e) {
 
         generarExamenFisico();
 
-        setTimeout(() => {
+        setTimeout(async () => {
 
             // =========================
             // 🔹 LLENAR CAMPOS
@@ -636,7 +640,7 @@ document.addEventListener("click", async function (e) {
             cm_diagnostico_definitivo.value = consulta.cm_diagnostico_definitivo || "";
 
             // Task 8.1: Mostrar medicamentos en modo lectura
-            renderMedicamentosReadOnly(consulta.cm_medicamentos_aplicados);
+            await renderMedicamentosReadOnly(consulta.cm_medicamentos_aplicados);
 
             cm_presupuesto.value = consulta.cm_presupuesto || "";
 
@@ -714,6 +718,12 @@ document.addEventListener("click", async function (e) {
             document.getElementById("btnLimpiarCampos").style.display = "none";
             document.getElementById("btnVerSeguimientos").style.display = "inline-block";
 
+            // Mostrar botón de imprimir fórmula si la consulta tiene fórmula
+            const btnImprimirFormula = document.getElementById("btnImprimirFormula");
+            if (btnImprimirFormula) {
+                btnImprimirFormula.style.display = consulta.cm_formula ? "inline-block" : "none";
+            }
+
             bloquearFormularioConsulta();
 
         }, 200);
@@ -777,6 +787,23 @@ document.getElementById("btnFinalizarConsulta").onclick = async () => {
 
 document.getElementById("btnDescargarFormula").onclick = async () => {
 
+    if (!consultaActualId) {
+        Swal.fire("Error", "No hay consulta seleccionada", "error");
+        return;
+    }
+
+    // 🔹 Traer fórmula de la consulta
+    const { data: consulta } = await supabaseClient
+        .from("consulta_medica")
+        .select("cm_formula")
+        .eq("cm_id_consulta", consultaActualId)
+        .single();
+
+    if (!consulta || !consulta.cm_formula) {
+        Swal.fire("Info", "Esta consulta no tiene fórmula registrada", "info");
+        return;
+    }
+
     // 🔹 Traer nombre del propietario
     const { data: cliente } = await supabaseClient
         .from("datos_cliente")
@@ -791,14 +818,19 @@ document.getElementById("btnDescargarFormula").onclick = async () => {
         raza: mascota.dm_raza,
         sexo: mascota.dm_sexo,
         peso: mascota.dm_peso + "Kg",
-        tratamiento: document.getElementById("vc_tratamiento").textContent
+        tratamiento: consulta.cm_formula
     };
 
     // Guardamos temporalmente
     sessionStorage.setItem("datosFormula", JSON.stringify(datosPDF));
 
-    // Abrimos plantilla
-    window.open("reporte_formula.html", "_blank");
+    // Abrimos plantilla como popup
+    window.open("reporte_formula.html", "FormulaVeterinaria", "width=520,height=780,scrollbars=no,resizable=no,menubar=no,toolbar=no,location=no,status=no");
+};
+
+// Botón imprimir fórmula dentro del modal de detalle consulta
+document.getElementById("btnImprimirFormula").onclick = function () {
+    document.getElementById("btnDescargarFormula").click();
 };
 
 
@@ -821,6 +853,8 @@ $('#modalRegistroConsulta').on('show.bs.modal', function () {
     document.getElementById("btnGuardarConsulta").style.display = "inline-block";
     document.getElementById("btnLimpiarCampos").style.display = "inline-block";
     document.getElementById("btnFinalizarConsulta").style.display = "none";
+    document.getElementById("btnImprimirFormula").style.display = "none";
+    document.getElementById("btnVerSeguimientos").style.display = "none";
 
     desbloquearFormularioConsulta();
     restaurarMedicamentosEdicion();
@@ -857,8 +891,8 @@ async function cargarMedicamentosInventario() {
     try {
         const { data, error } = await supabaseClient
             .from("productos")
-            .select("pr_id_producto, pr_nombre, pr_lote, pr_cantidad_disponible, pr_stock_minimo, pr_costo_compra, pr_precio_venta")
-            .eq("pr_cat_id_categoria", 1);
+            .select("pr_id_producto, pr_nombre, pr_lote, pr_cantidad_disponible, pr_stock_minimo, pr_costo_compra, pr_precio_venta, pr_cat_id_categoria, pr_unidad_medida")
+            .in("pr_cat_id_categoria", [1, 4]);
 
         if (error) throw new Error(error.message);
 
@@ -911,7 +945,8 @@ function agregarAlCarritoLocal(carrito, producto) {
             cantidad: 1,
             stockDisponible: producto.pr_cantidad_disponible || 0,
             costoUnitario: producto.pr_costo_compra || 0,
-            precioVenta: producto.pr_precio_venta || 0
+            precioVenta: producto.pr_precio_venta || 0,
+            unidadMedida: producto.pr_unidad_medida || ''
         }
     ];
 }
@@ -983,7 +1018,8 @@ function serializarMedicamentosConsultaLocal(items) {
     const mapped = items.map(item => ({
         nombre: item.nombre || '',
         lote: item.lote || '',
-        cantidad: item.cantidad || 0
+        cantidad: item.cantidad || 0,
+        unidad: item.unidadMedida || ''
     }));
     return JSON.stringify(mapped);
 }
@@ -1127,8 +1163,9 @@ function renderListaSeleccionados() {
 
     let html = "";
     medicamentosSeleccionados.forEach(item => {
+        const unidad = item.unidadMedida ? ` (${item.unidadMedida})` : '';
         html += `<div class="med-item" data-id="${item.productoId}">
-            <span class="med-nombre" title="${item.nombre} (Lote: ${item.lote})">${item.nombre}</span>
+            <span class="med-nombre" title="${item.nombre} (Lote: ${item.lote})">${item.nombre}${unidad}</span>
             <input type="number" class="med-cantidad" value="${item.cantidad}" min="1" max="${item.stockDisponible}" data-id="${item.productoId}">
             <button type="button" class="btn-eliminar-med" data-id="${item.productoId}" title="Eliminar">&times;</button>
         </div>`;
@@ -1174,7 +1211,7 @@ function renderListaSeleccionados() {
 /**
  * Renderiza medicamentos en modo solo lectura para "Ver Consulta".
  */
-function renderMedicamentosReadOnly(textoMedicamentos) {
+async function renderMedicamentosReadOnly(textoMedicamentos) {
     const wrapper = document.getElementById("busquedaMedicamentoWrapper");
     const listaContainer = document.getElementById("listaMedicamentosSeleccionados");
 
@@ -1196,11 +1233,28 @@ function renderMedicamentosReadOnly(textoMedicamentos) {
         return;
     }
 
+    // Buscar unidades de medida desde la tabla productos por nombre
+    const nombres = items.map(i => i.nombre).filter(Boolean);
+    let unidadesMap = {};
+    if (nombres.length > 0) {
+        const { data: productos } = await supabaseClient
+            .from("productos")
+            .select("pr_nombre, pr_unidad_medida")
+            .in("pr_nombre", nombres);
+        if (productos) {
+            productos.forEach(p => {
+                if (p.pr_unidad_medida) unidadesMap[p.pr_nombre] = p.pr_unidad_medida;
+            });
+        }
+    }
+
     let html = '<div class="lista-medicamentos-readonly">';
     items.forEach(item => {
+        const unidad = item.unidad || unidadesMap[item.nombre] || '';
+        const unidadDisplay = unidad ? ` (${unidad})` : '';
         html += `<div class="med-item">
-            <span class="med-nombre" title="Lote: ${item.lote}">${item.nombre} <small>(${item.lote})</small></span>
-            <input type="text" class="med-cantidad" value="${item.cantidad}" readonly disabled>
+            <span class="med-nombre" title="Lote: ${item.lote}">${item.nombre}${unidadDisplay} <small>(${item.lote})</small></span>
+            <input type="text" class="med-cantidad" value="${item.cantidad}${unidad ? ' ' + unidad : ''}" readonly disabled>
         </div>`;
     });
     html += '</div>';
@@ -1350,6 +1404,51 @@ async function rollbackDescuentos(descuentosRealizados, idConsulta) {
         } catch (rollbackErr) {
             console.error("Error en rollback para producto " + descuento.nombre, rollbackErr);
         }
+    }
+}
+
+
+// ================= REGISTRO DE VACUNAS APLICADAS =================
+
+/**
+ * Registra en info_vacunacion los medicamentos que pertenecen a la categoría Vacunas (4).
+ */
+async function registrarVacunasAplicadas(items) {
+    if (!Array.isArray(items) || items.length === 0) return;
+
+    const idMascota = parseInt(document.getElementById("dm_id_mascota").value);
+    if (!idMascota) return;
+
+    // Obtener los IDs de productos del carrito
+    const productoIds = items.map(i => i.productoId).filter(Boolean);
+    if (productoIds.length === 0) return;
+
+    // Consultar cuáles pertenecen a la categoría Vacunas (4)
+    const { data: productosVacuna, error } = await supabaseClient
+        .from("productos")
+        .select("pr_id_producto, pr_nombre")
+        .in("pr_id_producto", productoIds)
+        .eq("pr_cat_id_categoria", 4);
+
+    if (error || !productosVacuna || productosVacuna.length === 0) return;
+
+    // Insertar cada vacuna en info_vacunacion con cantidad
+    const registros = productosVacuna.map(v => {
+        const itemCarrito = items.find(i => i.productoId === v.pr_id_producto);
+        return {
+            iv_dm_id_mascota: idMascota,
+            iv_fecha_vacunacion: new Date().toISOString().split('T')[0],
+            iv_pr_id_producto: v.pr_id_producto,
+            iv_cantidad: itemCarrito ? itemCarrito.cantidad : 1
+        };
+    });
+
+    const { error: errInsert } = await supabaseClient
+        .from("info_vacunacion")
+        .insert(registros);
+
+    if (errInsert) {
+        console.error("Error registrando vacunas:", errInsert);
     }
 }
 
@@ -1811,6 +1910,448 @@ document.addEventListener("click", function (e) {
         if (consultaId) finalizarConsultaDesdeTabla(parseInt(consultaId));
     }
 });
+
+// ================= HISTORIAL MÉDICO =================
+
+// Abrir modal de fechas al hacer clic en el botón
+document.getElementById("btnHistorialMedico").addEventListener("click", function () {
+    document.getElementById("historial_fecha_inicio").value = "";
+    document.getElementById("historial_fecha_fin").value = "";
+    document.getElementById("historial_error_fechas").style.display = "none";
+    document.getElementById("historial_error_fechas").textContent = "";
+    $('#modalHistorialFechas').modal('show');
+});
+
+// Generar historial al confirmar fechas
+document.getElementById("btnGenerarHistorial").addEventListener("click", async function () {
+    const fechaInicio = document.getElementById("historial_fecha_inicio").value;
+    const fechaFin = document.getElementById("historial_fecha_fin").value;
+    const errorDiv = document.getElementById("historial_error_fechas");
+
+    // Validar fechas
+    const validacion = validarRangoFechasHistorialLocal(fechaInicio, fechaFin);
+    if (!validacion.valido) {
+        errorDiv.textContent = validacion.error;
+        errorDiv.style.display = "block";
+        return;
+    }
+
+    errorDiv.style.display = "none";
+    $('#modalHistorialFechas').modal('hide');
+
+    await generarHistorialMedico(mascota.dm_id_mascota, fechaInicio, validacion.fechaFinEfectiva);
+});
+
+function validarRangoFechasHistorialLocal(fechaInicio, fechaFin) {
+    if (!fechaInicio || !fechaInicio.trim()) {
+        return { valido: false, error: 'La fecha inicial es obligatoria', fechaFinEfectiva: '' };
+    }
+
+    const hoy = new Date();
+    const fechaHoy = hoy.getFullYear() + '-' +
+        String(hoy.getMonth() + 1).padStart(2, '0') + '-' +
+        String(hoy.getDate()).padStart(2, '0');
+
+    const fechaFinEfectiva = (fechaFin && fechaFin.trim()) ? fechaFin.trim() : fechaHoy;
+
+    if (fechaInicio.trim() > fechaFinEfectiva) {
+        return { valido: false, error: 'La fecha inicial debe ser anterior o igual a la fecha final', fechaFinEfectiva };
+    }
+
+    return { valido: true, error: null, fechaFinEfectiva };
+}
+
+async function consultarConsultasMedicas(mascotaId, fechaInicio, fechaFin) {
+    const { data: consultas, error } = await supabaseClient
+        .from("consulta_medica")
+        .select("*")
+        .eq("cm_dm_id_mascota", mascotaId)
+        .gte("cm_fecha_consulta", fechaInicio)
+        .lte("cm_fecha_consulta", fechaFin + " 23:59:59")
+        .order("cm_fecha_consulta", { ascending: true });
+
+    if (error) throw new Error("Error al consultar consultas médicas: " + error.message);
+    if (!consultas || consultas.length === 0) return [];
+
+    const ids = consultas.map(c => c.cm_id_consulta);
+
+    // Consultar datos asociados en paralelo
+    const [examenesRes, ectoRes, planesRes] = await Promise.all([
+        supabaseClient.from("examen_fisico").select("*").in("ef_cm_id_consulta", ids),
+        supabaseClient.from("ectoparasitos").select("*").in("e_cm_id_consulta", ids),
+        supabaseClient.from("plan_diagnostico").select("*").in("pd_cm_id_consulta", ids)
+    ]);
+
+    const examenes = examenesRes.data || [];
+    const ectoparasitos = ectoRes.data || [];
+    const planes = planesRes.data || [];
+
+    // Obtener unidades de medida de todos los medicamentos mencionados
+    const todosNombres = new Set();
+    consultas.forEach(c => {
+        if (c.cm_medicamentos_aplicados) {
+            try {
+                const meds = JSON.parse(c.cm_medicamentos_aplicados);
+                if (Array.isArray(meds)) meds.forEach(m => { if (m.nombre) todosNombres.add(m.nombre); });
+            } catch (e) {}
+        }
+    });
+    let unidadesMap = {};
+    if (todosNombres.size > 0) {
+        const { data: prods } = await supabaseClient
+            .from("productos")
+            .select("pr_nombre, pr_unidad_medida")
+            .in("pr_nombre", Array.from(todosNombres));
+        if (prods) prods.forEach(p => { if (p.pr_unidad_medida) unidadesMap[p.pr_nombre] = p.pr_unidad_medida; });
+    }
+
+    return consultas.map(c => {
+        const examen = examenes.find(e => e.ef_cm_id_consulta === c.cm_id_consulta) || null;
+        const ecto = ectoparasitos.find(e => e.e_cm_id_consulta === c.cm_id_consulta) || null;
+        const plan = planes.find(p => p.pd_cm_id_consulta === c.cm_id_consulta) || null;
+
+        // Enriquecer medicamentos con unidad de medida
+        let medicamentosEnriquecidos = c.cm_medicamentos_aplicados || '';
+        if (medicamentosEnriquecidos && medicamentosEnriquecidos !== '[]') {
+            try {
+                const meds = JSON.parse(medicamentosEnriquecidos);
+                if (Array.isArray(meds)) {
+                    const medsConUnidad = meds.map(m => ({
+                        ...m,
+                        unidad: m.unidad || unidadesMap[m.nombre] || ''
+                    }));
+                    medicamentosEnriquecidos = JSON.stringify(medsConUnidad);
+                }
+            } catch (e) {}
+        }
+
+        return {
+            fecha: c.cm_fecha_consulta ? c.cm_fecha_consulta.split(" ")[0] : '',
+            motivo: c.cm_motivo_consulta || '',
+            diagnosticoDiferencial: c.cm_diagnosticos_diferenciales || '',
+            diagnosticoDefinitivo: c.cm_diagnostico_definitivo || '',
+            observaciones: c.cm_observaciones || '',
+            formula: c.cm_formula || '',
+            medicamentosAplicados: medicamentosEnriquecidos,
+            examenFisico: examen ? {
+                peso: examen.ef_peso_mascota || '',
+                frecuenciaRespiratoria: examen.ef_fr || '',
+                frecuenciaCardiaca: examen.ef_fc || '',
+                pulso: examen.ef_pulso || '',
+                tllc: examen.ef_tllc || '',
+                deshidratacion: examen.ef_deshidratacion || '',
+                trufa: examen.ef_trufa || '',
+                turgenciaPiel: examen.ef_turgencia_piel || '',
+                temperatura: examen.ef_temperatura || '',
+                reflejoPupilar: examen.ef_reflejo_pupilar || '',
+                palpAbdominal: examen.ef_palp_abdominal || '',
+                estadoConciencia: examen.ef_estado_conciencia || '',
+                aparienciaGeneral: examen.ef_apariencia_general || '',
+                mucosas: examen.ef_color_mucosas || '',
+                bocaDientes: examen.ef_boca_dientes || '',
+                ojos: examen.ef_ojos || '',
+                oidos: examen.ef_oidos || '',
+                pielPelo: examen.ef_piel_pelo || '',
+                sonidosCardiacos: examen.ef_sonidos_cardiacos || '',
+                musculoEsqueletico: examen.ef_musculo_esqueletico || '',
+                otros: examen.ef_otros || ''
+            } : null,
+            ectoparasitos: ecto ? {
+                pulgas: ecto.e_pulgas || '',
+                garrapatas: ecto.e_garrapatas || '',
+                prurito: ecto.e_pruito || '',
+                descripcionPulgas: ecto.e_descripcion_pulgas || '',
+                descripcionGarrapatas: ecto.e_descripcion_garrapatas || '',
+                descripcionPrurito: ecto.e_descripcion_pruito || '',
+                coproDirecto: ecto.e_copro_directo || '',
+                coproFlotacion: ecto.e_copro_flotacion || ''
+            } : null,
+            planDiagnostico: plan ? {
+                raspado: plan.pd_raspado || '',
+                citologia: plan.pd_citologia || '',
+                rxContraste: plan.pd_rx_contraste || '',
+                perfilRenal: plan.pd_perfil_renal || '',
+                quimicaSanguinea: plan.pd_quimica_sanguinea || '',
+                perfilPreanestesico: plan.pd_perfil_preanestesico || '',
+                perfilHepatico: plan.pd_perfil_hepatico || '',
+                snap: plan.pd_snap || '',
+                radiografia: plan.pd_radiografia || '',
+                endoscopia: plan.pd_endoscopia || '',
+                hospitalizacion: plan.pd_hospitalizacion || '',
+                sedacion: plan.pd_sedacion || '',
+                anestesia: plan.pd_anestesia || '',
+                suturas: plan.pd_suturas || '',
+                observacion: plan.pd_observacion || '',
+                interconsulta: plan.pd_interconsulta || ''
+            } : null
+        };
+    });
+}
+
+async function consultarVacunaciones(mascotaId, fechaInicio, fechaFin) {
+    const { data, error } = await supabaseClient
+        .from("info_vacunacion")
+        .select("iv_fecha_vacunacion, iv_pr_id_producto, iv_v_id_vacuna, iv_cantidad, vacunas(v_nombre_vacuna), productos(pr_nombre, pr_unidad_medida)")
+        .eq("iv_dm_id_mascota", mascotaId)
+        .gte("iv_fecha_vacunacion", fechaInicio)
+        .lte("iv_fecha_vacunacion", fechaFin);
+
+    if (error) throw new Error("Error al consultar vacunaciones: " + error.message);
+    if (!data || data.length === 0) return [];
+
+    return data.map(v => ({
+        fecha: v.iv_fecha_vacunacion || '',
+        nombreVacuna: v.productos?.pr_nombre || v.vacunas?.v_nombre_vacuna || 'Vacuna sin nombre',
+        cantidad: v.iv_cantidad || '',
+        unidad: v.productos?.pr_unidad_medida || '',
+        observaciones: ''
+    }));
+}
+
+async function consultarHospitalizaciones(mascotaId, fechaInicio, fechaFin) {
+    const { data: hospitalizaciones, error } = await supabaseClient
+        .from("hospitalizaciones")
+        .select("*")
+        .eq("h_mascota_id", mascotaId)
+        .gte("h_fecha_ingreso", fechaInicio)
+        .lte("h_fecha_ingreso", fechaFin + " 23:59:59")
+        .order("h_fecha_ingreso", { ascending: true });
+
+    if (error) throw new Error("Error al consultar hospitalizaciones: " + error.message);
+    if (!hospitalizaciones || hospitalizaciones.length === 0) return [];
+
+    const ids = hospitalizaciones.map(h => h.h_id_hospitalizacion);
+
+    const [medsRes, monRes, obsRes] = await Promise.all([
+        supabaseClient.from("hospitalizacion_medicamentos").select("*").in("hm_hospitalizacion_id", ids),
+        supabaseClient.from("hospitalizacion_monitoreo").select("*").in("hmon_hospitalizacion_id", ids),
+        supabaseClient.from("hospitalizacion_observaciones").select("*").in("hobs_hospitalizacion_id", ids)
+    ]);
+
+    const medicamentos = medsRes.data || [];
+    const monitoreos = monRes.data || [];
+    const observaciones = obsRes.data || [];
+
+    // Fetch administraciones for all medications
+    const medIds = medicamentos.map(m => m.hm_id_medicamento);
+    let administraciones = [];
+    if (medIds.length > 0) {
+        const { data: admData } = await supabaseClient
+            .from("hospitalizacion_administraciones")
+            .select("*")
+            .in("hadm_medicamento_id", medIds);
+        administraciones = admData || [];
+    }
+
+    return hospitalizaciones.map(h => {
+        const hospMeds = medicamentos.filter(m => m.hm_hospitalizacion_id === h.h_id_hospitalizacion);
+        const hospMedIds = hospMeds.map(m => m.hm_id_medicamento);
+
+        return {
+            fecha: h.h_fecha_ingreso ? h.h_fecha_ingreso.split(" ")[0] : '',
+            fechaIngreso: h.h_fecha_ingreso || '',
+            fechaEgreso: h.h_fecha_egreso || '',
+            peso: h.h_peso || '',
+            hidratacion: h.h_hidratacion || '',
+            medicoTratante: h.h_medico_tratante || '',
+            auxiliarTratante: h.h_auxiliar_tratante || '',
+            estado: h.h_estado || '',
+            observaciones: h.h_observaciones || '',
+            medicamentosAdicionalesJson: h.h_medicamentos_adicionales_json || [],
+            medicamentosAdicionalesTexto: h.h_medicamentos_adicionales || '',
+            medicamentos: hospMeds
+                .map(m => ({ nombre: m.hm_nombre || '', dosis: m.hm_dosis || '', via: m.hm_via || '', ml: m.hm_ml || '', id: m.hm_id_medicamento })),
+            administraciones: administraciones
+                .filter(a => hospMedIds.includes(a.hadm_medicamento_id))
+                .map(a => ({
+                    diaSemana: a.hadm_dia_semana || '',
+                    hora: a.hadm_hora || '',
+                    aplicado: a.hadm_aplicado || false,
+                    medicamentoId: a.hadm_medicamento_id,
+                    nota: a.hadm_nota || ''
+                })),
+            monitoreos: monitoreos
+                .filter(m => m.hmon_hospitalizacion_id === h.h_id_hospitalizacion)
+                .map(m => ({
+                    diaSemana: m.hmon_dia_semana || '',
+                    turno: m.hmon_turno || '',
+                    colorMucosas: m.hmon_color_mucosas || '',
+                    tllc: m.hmon_tllc || '',
+                    sed: m.hmon_sed || '',
+                    apetito: m.hmon_apetito || '',
+                    animo: m.hmon_animo || '',
+                    temperatura: m.hmon_temperatura != null ? m.hmon_temperatura : '',
+                    fc: m.hmon_frecuencia_cardiaca != null ? m.hmon_frecuencia_cardiaca : '',
+                    fr: m.hmon_frecuencia_respiratoria != null ? m.hmon_frecuencia_respiratoria : '',
+                    vomitos: m.hmon_vomitos != null ? m.hmon_vomitos : '',
+                    diarreas: m.hmon_diarreas != null ? m.hmon_diarreas : '',
+                    comio: m.hmon_comio || false,
+                    tomoAgua: m.hmon_tomo_agua || false,
+                    defeco: m.hmon_defeco || false,
+                    observaciones: m.hmon_observaciones || ''
+                })),
+            observacionesEvolucion: observaciones
+                .filter(o => o.hobs_hospitalizacion_id === h.h_id_hospitalizacion)
+                .map(o => ({ texto: o.hobs_texto || '', tipo: o.hobs_tipo || '', fecha: o.hobs_created_at || '' }))
+        };
+    });
+}
+
+async function consultarSeguimientos(mascotaId, fechaInicio, fechaFin) {
+    // Primero obtener IDs de consultas de la mascota
+    const { data: consultas, error: errorConsultas } = await supabaseClient
+        .from("consulta_medica")
+        .select("cm_id_consulta")
+        .eq("cm_dm_id_mascota", mascotaId);
+
+    if (errorConsultas) throw new Error("Error al consultar seguimientos: " + errorConsultas.message);
+    if (!consultas || consultas.length === 0) return [];
+
+    const consultaIds = consultas.map(c => c.cm_id_consulta);
+
+    const { data, error } = await supabaseClient
+        .from("seguimiento")
+        .select("*")
+        .in("s_cm_id_consulta", consultaIds)
+        .gte("s_fecha_seguimiento", fechaInicio)
+        .lte("s_fecha_seguimiento", fechaFin)
+        .order("s_fecha_seguimiento", { ascending: true });
+
+    if (error) throw new Error("Error al consultar seguimientos: " + error.message);
+    if (!data || data.length === 0) return [];
+
+    return data.map(s => ({
+        fecha: s.s_fecha_seguimiento || '',
+        texto: s.s_seguimiento || '',
+        formula: s.s_formula || ''
+    }));
+}
+
+async function generarHistorialMedico(mascotaId, fechaInicio, fechaFin) {
+    try {
+        // Mostrar loader
+        Swal.fire({
+            title: 'Generando historial...',
+            text: 'Consultando datos clínicos',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
+
+        // Consultas en paralelo
+        const [consultas, vacunaciones, hospitalizaciones, seguimientos, tutorRes] = await Promise.all([
+            consultarConsultasMedicas(mascotaId, fechaInicio, fechaFin),
+            consultarVacunaciones(mascotaId, fechaInicio, fechaFin),
+            consultarHospitalizaciones(mascotaId, fechaInicio, fechaFin),
+            consultarSeguimientos(mascotaId, fechaInicio, fechaFin),
+            supabaseClient.from("datos_cliente").select("dc_nombre, dc_telefono, dc_identificacion").eq("dc_id_cliente", mascota.dm_dc_id_cliente).single()
+        ]);
+
+        const tutor = tutorRes.data || {};
+
+        // Unificar eventos
+        const eventos = unificarEventosClinicosLocal({ consultas, vacunaciones, hospitalizaciones, seguimientos });
+
+        // Verificar si hay eventos
+        if (eventos.length === 0) {
+            Swal.fire({
+                title: 'Sin registros',
+                text: 'No se encontraron registros médicos en el período consultado',
+                icon: 'info'
+            });
+            return;
+        }
+
+        // Calcular edad
+        const edad = calcularEdadMascotaLocal(mascota.dm_fecha_nacimiento);
+
+        // Preparar datos para sessionStorage
+        const datosHistorial = {
+            mascota: {
+                nombre: mascota.dm_nombre || '',
+                especie: mascota.dm_especie || '',
+                raza: mascota.dm_raza || '',
+                sexo: mascota.dm_sexo || '',
+                peso: mascota.dm_peso || '',
+                fechaNacimiento: mascota.dm_fecha_nacimiento || '',
+                edad: edad
+            },
+            tutor: {
+                nombre: tutor.dc_nombre || '—',
+                telefono: tutor.dc_telefono || '—',
+                identificacion: tutor.dc_identificacion || '—'
+            },
+            rangoFechas: {
+                inicio: fechaInicio,
+                fin: fechaFin
+            },
+            eventos: eventos
+        };
+
+        sessionStorage.setItem("datosHistorialMedico", JSON.stringify(datosHistorial));
+
+        Swal.close();
+
+        // Abrir popup
+        const popup = window.open("reporte_historial.html", "HistorialMedico", "width=900,height=700,scrollbars=yes,resizable=yes");
+
+        if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+            Swal.fire({
+                title: 'Popup bloqueado',
+                text: 'Debe permitir ventanas emergentes para ver el reporte',
+                icon: 'warning'
+            });
+        }
+
+    } catch (err) {
+        Swal.fire({
+            title: 'Error',
+            text: 'Error al consultar datos. Intente nuevamente: ' + err.message,
+            icon: 'error'
+        });
+    }
+}
+
+function unificarEventosClinicosLocal(datos) {
+    const eventos = [];
+
+    if (datos.consultas && Array.isArray(datos.consultas)) {
+        datos.consultas.forEach(c => { eventos.push({ tipo: 'consulta', fecha: c.fecha || '', datos: c }); });
+    }
+    if (datos.vacunaciones && Array.isArray(datos.vacunaciones)) {
+        datos.vacunaciones.forEach(v => { eventos.push({ tipo: 'vacunacion', fecha: v.fecha || '', datos: v }); });
+    }
+    if (datos.hospitalizaciones && Array.isArray(datos.hospitalizaciones)) {
+        datos.hospitalizaciones.forEach(h => { eventos.push({ tipo: 'hospitalizacion', fecha: h.fecha || '', datos: h }); });
+    }
+    if (datos.seguimientos && Array.isArray(datos.seguimientos)) {
+        datos.seguimientos.forEach(s => { eventos.push({ tipo: 'seguimiento', fecha: s.fecha || '', datos: s }); });
+    }
+
+    eventos.sort((a, b) => {
+        if (a.fecha < b.fecha) return -1;
+        if (a.fecha > b.fecha) return 1;
+        return 0;
+    });
+
+    return eventos;
+}
+
+function calcularEdadMascotaLocal(fechaNacimiento) {
+    if (!fechaNacimiento || typeof fechaNacimiento !== 'string') return '—';
+    const partes = fechaNacimiento.trim().split(' ')[0].split('-');
+    if (partes.length < 3) return '—';
+    const nacimiento = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
+    const hoy = new Date();
+    let anios = hoy.getFullYear() - nacimiento.getFullYear();
+    let meses = hoy.getMonth() - nacimiento.getMonth();
+    if (hoy.getDate() < nacimiento.getDate()) meses--;
+    if (meses < 0) { anios--; meses += 12; }
+    if (anios <= 0 && meses <= 0) return '< 1 mes';
+    let resultado = '';
+    if (anios > 0) resultado += anios + (anios === 1 ? ' año' : ' años');
+    if (meses > 0) { if (resultado) resultado += ' '; resultado += meses + (meses === 1 ? ' mes' : ' meses'); }
+    return resultado || '< 1 mes';
+}
 
 // Export for testing
 if (typeof module !== 'undefined' && module.exports) {
