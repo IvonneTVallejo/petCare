@@ -813,7 +813,7 @@ function cargarProductosEnSelectAjuste() {
 // ================= GESTIÓN MASIVA CSV =================
 
 // --- Constants ---
-const ENCABEZADOS_PLANTILLA = ['pr_nombre', 'pr_descripcion', 'pr_cat_id_categoria', 'pr_prov_id_proveedor', 'pr_costo_compra', 'pr_precio_venta', 'pr_cantidad_disponible', 'pr_stock_minimo', 'pr_lote', 'pr_fecha_vencimiento'];
+const ENCABEZADOS_PLANTILLA = ['pr_nombre', 'pr_descripcion', 'pr_cat_id_categoria', 'pr_prov_id_proveedor', 'pr_unidad_medida', 'pr_costo_compra', 'pr_precio_venta', 'pr_cantidad_disponible', 'pr_stock_minimo', 'pr_lote', 'pr_fecha_vencimiento'];
 const ENCABEZADOS_ACTUALIZACION = ['pr_id_producto', ...ENCABEZADOS_PLANTILLA];
 const CAMPOS_OBLIGATORIOS_CSV = ['pr_nombre', 'pr_descripcion', 'pr_cat_id_categoria', 'pr_prov_id_proveedor', 'pr_costo_compra', 'pr_precio_venta', 'pr_cantidad_disponible', 'pr_stock_minimo', 'pr_lote'];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -831,11 +831,23 @@ function descargarCSV(contenido, nombreArchivo) {
 }
 
 async function descargarPlantillaProductosNuevos() {
+    // Cargar categorías, proveedores y unidades de medida desde la BD
+    const [catRes, provRes, umRes] = await Promise.all([
+        supabaseClient.from('categoria_producto').select('cat_id_categoria, cat_nombre').order('cat_nombre'),
+        supabaseClient.from('proveedores').select('prov_id_proveedor, prov_nombre').order('prov_nombre'),
+        supabaseClient.from('unidad_medida').select('um_id_unidad, um_nombre').order('um_nombre')
+    ]);
+
+    const categorias = (catRes.data || []).map(c => c.cat_nombre);
+    const proveedores = (provRes.data || []).map(p => p.prov_nombre);
+    const unidades = (umRes.data || []).map(u => u.um_nombre);
+
     const ejemplo = {
         pr_nombre: 'Producto Ejemplo',
         pr_descripcion: 'Descripción del producto',
-        pr_cat_id_categoria: 1,
-        pr_prov_id_proveedor: 1,
+        pr_cat_id_categoria: categorias[0] || 'Medicamentos',
+        pr_prov_id_proveedor: proveedores[0] || 'Proveedor 1',
+        pr_unidad_medida: unidades[0] || 'ML',
         pr_costo_compra: 10000,
         pr_precio_venta: 15000,
         pr_cantidad_disponible: 100,
@@ -861,10 +873,49 @@ async function descargarPlantillaProductosNuevos() {
     });
 
     // Desbloquear celdas de datos (fila 2 en adelante)
-    for (let R = 2; R <= sheet.rowCount; R++) {
-        sheet.getRow(R).eachCell(cell => {
+    for (let R = 2; R <= 1000; R++) {
+        const row = sheet.getRow(R);
+        row.eachCell({ includeEmpty: true }, cell => {
             cell.protection = { locked: false };
         });
+    }
+
+    // Agregar data validation (listas desplegables) para filas 2-1000
+    const colCategoria = ENCABEZADOS_PLANTILLA.indexOf('pr_cat_id_categoria') + 1;
+    const colProveedor = ENCABEZADOS_PLANTILLA.indexOf('pr_prov_id_proveedor') + 1;
+    const colUnidad = ENCABEZADOS_PLANTILLA.indexOf('pr_unidad_medida') + 1;
+
+    for (let R = 2; R <= 1000; R++) {
+        if (categorias.length > 0) {
+            sheet.getCell(R, colCategoria).dataValidation = {
+                type: 'list',
+                allowBlank: false,
+                formulae: ['"' + categorias.join(',') + '"'],
+                showErrorMessage: true,
+                errorTitle: 'Categoría inválida',
+                error: 'Seleccione una categoría de la lista'
+            };
+        }
+        if (proveedores.length > 0) {
+            sheet.getCell(R, colProveedor).dataValidation = {
+                type: 'list',
+                allowBlank: false,
+                formulae: ['"' + proveedores.join(',') + '"'],
+                showErrorMessage: true,
+                errorTitle: 'Proveedor inválido',
+                error: 'Seleccione un proveedor de la lista'
+            };
+        }
+        if (unidades.length > 0) {
+            sheet.getCell(R, colUnidad).dataValidation = {
+                type: 'list',
+                allowBlank: true,
+                formulae: ['"' + unidades.join(',') + '"'],
+                showErrorMessage: true,
+                errorTitle: 'Unidad inválida',
+                error: 'Seleccione una unidad de la lista'
+            };
+        }
     }
 
     // Auto-ajustar ancho de columnas
@@ -891,20 +942,33 @@ async function descargarPlantillaProductosNuevos() {
 }
 
 async function descargarInventarioActual() {
-    const { data, error } = await supabaseClient
-        .from('productos')
-        .select('pr_id_producto, pr_nombre, pr_descripcion, pr_cat_id_categoria, pr_prov_id_proveedor, pr_costo_compra, pr_precio_venta, pr_cantidad_disponible, pr_stock_minimo, pr_lote, pr_fecha_vencimiento')
-        .order('pr_id_producto');
+    const [prodRes, catRes, provRes, umRes] = await Promise.all([
+        supabaseClient.from('productos').select('pr_id_producto, pr_nombre, pr_descripcion, pr_cat_id_categoria, pr_prov_id_proveedor, pr_unidad_medida, pr_costo_compra, pr_precio_venta, pr_cantidad_disponible, pr_stock_minimo, pr_lote, pr_fecha_vencimiento').order('pr_id_producto'),
+        supabaseClient.from('categoria_producto').select('cat_id_categoria, cat_nombre'),
+        supabaseClient.from('proveedores').select('prov_id_proveedor, prov_nombre'),
+        supabaseClient.from('unidad_medida').select('um_id_unidad, um_nombre').order('um_nombre')
+    ]);
 
-    if (error) {
-        await Swal.fire({ title: 'Error', text: error.message, icon: 'error' });
+    if (prodRes.error) {
+        await Swal.fire({ title: 'Error', text: prodRes.error.message, icon: 'error' });
         return;
     }
 
+    const data = prodRes.data;
     if (!data || data.length === 0) {
         await Swal.fire({ title: 'Sin datos', text: 'No hay productos en el inventario.', icon: 'info' });
         return;
     }
+
+    // Mapas ID → nombre
+    const mapaCatNombre = new Map();
+    (catRes.data || []).forEach(c => mapaCatNombre.set(c.cat_id_categoria, c.cat_nombre));
+    const mapaProvNombre = new Map();
+    (provRes.data || []).forEach(p => mapaProvNombre.set(p.prov_id_proveedor, p.prov_nombre));
+
+    const categorias = (catRes.data || []).map(c => c.cat_nombre);
+    const proveedores = (provRes.data || []).map(p => p.prov_nombre);
+    const unidades = (umRes.data || []).map(u => u.um_nombre);
 
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Inventario');
@@ -912,9 +976,13 @@ async function descargarInventarioActual() {
     // Agregar encabezados
     sheet.addRow(ENCABEZADOS_ACTUALIZACION);
 
-    // Agregar datos
+    // Agregar datos con nombres en vez de IDs
     data.forEach(p => {
-        const fila = ENCABEZADOS_ACTUALIZACION.map(col => p[col] !== null && p[col] !== undefined ? p[col] : '');
+        const fila = ENCABEZADOS_ACTUALIZACION.map(col => {
+            if (col === 'pr_cat_id_categoria') return mapaCatNombre.get(p[col]) || p[col] || '';
+            if (col === 'pr_prov_id_proveedor') return mapaProvNombre.get(p[col]) || p[col] || '';
+            return p[col] !== null && p[col] !== undefined ? p[col] : '';
+        });
         sheet.addRow(fila);
     });
 
@@ -939,6 +1007,45 @@ async function descargarInventarioActual() {
                 cell.protection = { locked: false };
             }
         });
+    }
+
+    // Data validation (listas desplegables) para categoría, proveedor y unidad
+    const colCategoria = ENCABEZADOS_ACTUALIZACION.indexOf('pr_cat_id_categoria') + 1;
+    const colProveedor = ENCABEZADOS_ACTUALIZACION.indexOf('pr_prov_id_proveedor') + 1;
+    const colUnidad = ENCABEZADOS_ACTUALIZACION.indexOf('pr_unidad_medida') + 1;
+    const maxRow = Math.max(sheet.rowCount, 100);
+
+    for (let R = 2; R <= maxRow; R++) {
+        if (categorias.length > 0) {
+            sheet.getCell(R, colCategoria).dataValidation = {
+                type: 'list',
+                allowBlank: false,
+                formulae: ['"' + categorias.join(',') + '"'],
+                showErrorMessage: true,
+                errorTitle: 'Categoría inválida',
+                error: 'Seleccione una categoría de la lista'
+            };
+        }
+        if (proveedores.length > 0) {
+            sheet.getCell(R, colProveedor).dataValidation = {
+                type: 'list',
+                allowBlank: false,
+                formulae: ['"' + proveedores.join(',') + '"'],
+                showErrorMessage: true,
+                errorTitle: 'Proveedor inválido',
+                error: 'Seleccione un proveedor de la lista'
+            };
+        }
+        if (unidades.length > 0 && colUnidad > 0) {
+            sheet.getCell(R, colUnidad).dataValidation = {
+                type: 'list',
+                allowBlank: true,
+                formulae: ['"' + unidades.join(',') + '"'],
+                showErrorMessage: true,
+                errorTitle: 'Unidad inválida',
+                error: 'Seleccione una unidad de la lista'
+            };
+        }
     }
 
     // Auto-ajustar ancho de columnas
@@ -1188,20 +1295,59 @@ async function procesarFilasMasivas(filasValidas, modo, onProgreso) {
     let fallidos = 0;
     const erroresDB = [];
 
+    // Cargar mapas de nombre → ID para categorías y proveedores
+    const [catRes, provRes] = await Promise.all([
+        supabaseClient.from('categoria_producto').select('cat_id_categoria, cat_nombre'),
+        supabaseClient.from('proveedores').select('prov_id_proveedor, prov_nombre')
+    ]);
+
+    const mapaCategorias = new Map();
+    (catRes.data || []).forEach(c => mapaCategorias.set(c.cat_nombre.toLowerCase(), c.cat_id_categoria));
+
+    const mapaProveedores = new Map();
+    (provRes.data || []).forEach(p => mapaProveedores.set(p.prov_nombre.toLowerCase(), p.prov_id_proveedor));
+
     for (let i = 0; i < filasValidas.length; i++) {
         const fila = filasValidas[i].datos;
 
+        // Resolver categoría: si es nombre, buscar ID; si es número, usar directo
+        let catId = parseInt(fila.pr_cat_id_categoria);
+        if (isNaN(catId)) {
+            const catNombre = String(fila.pr_cat_id_categoria).trim().toLowerCase();
+            catId = mapaCategorias.get(catNombre);
+            if (!catId) {
+                fallidos++;
+                erroresDB.push({ fila: filasValidas[i].numeroFila, mensaje: `Categoría no encontrada: "${fila.pr_cat_id_categoria}"` });
+                if (onProgreso) onProgreso(i + 1, filasValidas.length);
+                continue;
+            }
+        }
+
+        // Resolver proveedor: si es nombre, buscar ID; si es número, usar directo
+        let provId = parseInt(fila.pr_prov_id_proveedor);
+        if (isNaN(provId)) {
+            const provNombre = String(fila.pr_prov_id_proveedor).trim().toLowerCase();
+            provId = mapaProveedores.get(provNombre);
+            if (!provId) {
+                fallidos++;
+                erroresDB.push({ fila: filasValidas[i].numeroFila, mensaje: `Proveedor no encontrado: "${fila.pr_prov_id_proveedor}"` });
+                if (onProgreso) onProgreso(i + 1, filasValidas.length);
+                continue;
+            }
+        }
+
         const productoData = {
-            pr_nombre: fila.pr_nombre.trim(),
-            pr_descripcion: fila.pr_descripcion.trim(),
-            pr_cat_id_categoria: parseInt(fila.pr_cat_id_categoria),
-            pr_prov_id_proveedor: parseInt(fila.pr_prov_id_proveedor),
+            pr_nombre: String(fila.pr_nombre).trim(),
+            pr_descripcion: String(fila.pr_descripcion).trim(),
+            pr_cat_id_categoria: catId,
+            pr_prov_id_proveedor: provId,
+            pr_unidad_medida: fila.pr_unidad_medida ? String(fila.pr_unidad_medida).trim() : null,
             pr_costo_compra: parseFloat(fila.pr_costo_compra),
             pr_precio_venta: parseFloat(fila.pr_precio_venta),
             pr_cantidad_disponible: parseInt(fila.pr_cantidad_disponible),
             pr_stock_minimo: parseInt(fila.pr_stock_minimo),
-            pr_lote: fila.pr_lote.trim(),
-            pr_fecha_vencimiento: fila.pr_fecha_vencimiento && String(fila.pr_fecha_vencimiento).trim() !== '' ? fila.pr_fecha_vencimiento.trim() : null
+            pr_lote: String(fila.pr_lote).trim(),
+            pr_fecha_vencimiento: fila.pr_fecha_vencimiento && String(fila.pr_fecha_vencimiento).trim() !== '' ? String(fila.pr_fecha_vencimiento).trim() : null
         };
 
         let error;
